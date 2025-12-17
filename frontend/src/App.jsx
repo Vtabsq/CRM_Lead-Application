@@ -18,8 +18,8 @@ import BedManagement from './BedManagement';
 import SearchData from './SearchData';
 import AIChat from './AIChat';
 
-// Constants
-const API_BASE_URL = 'http://localhost:8000';
+// Constants - Use environment variable for API URL (set VITE_API_BASE_URL in Vercel)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
