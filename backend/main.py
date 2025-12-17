@@ -39,38 +39,10 @@ from dropdown_helpers import (
 # Trigger reload for schema update
 load_dotenv()
 
-# ============== Decode Base64 Excel Template (for Render deployment) ==============
-import base64
-
-def ensure_excel_template():
-    """
-    If BASE64_TEMPLATE_PATH is set (Render deployment), decode the base64 file
-    into the actual Excel template before the app needs it.
-    """
-    base64_path = os.getenv("BASE64_TEMPLATE_PATH")
-    excel_path = os.getenv("EXCEL_FILE_PATH", "CRM_Lead_Template (1).xlsm")
-    
-    if not base64_path:
-        return  # Not using base64 encoding, skip
-    
-    if os.path.exists(excel_path):
-        return  # Already decoded
-    
-    if not os.path.exists(base64_path):
-        print(f"[Startup] Warning: BASE64_TEMPLATE_PATH set but file not found: {base64_path}")
-        return
-    
-    try:
-        with open(base64_path, "rb") as src:
-            decoded = base64.b64decode(src.read())
-        with open(excel_path, "wb") as dst:
-            dst.write(decoded)
-        print(f"[Startup] Decoded Excel template from {base64_path} to {excel_path}")
-    except Exception as e:
-        print(f"[Startup] Error decoding Excel template: {e}")
-
-ensure_excel_template()
-# ==================================================================================
+# ============== Excel Template is OPTIONAL for cloud deployment ==============
+# The app will use cached schema or fallback schema if Excel file is not present.
+# This allows deployment without uploading the Excel file as a secret.
+# ============================================================================
 
 app = FastAPI()
 
@@ -122,7 +94,7 @@ FEEDBACK_SHEET_NAME = "Feedback"
 LIST_BOX_SHEET = "List box"  # Sheet containing dropdown options (legacy)
 DROPDOWN_OPTION_SHEET = "DropdownOption"  # New centralized dropdown management sheet
 GOOGLE_SHEET_NAME = "Sheet1"  # Keep as default variable but irrelevant for data storage now
-CREDENTIALS_FILE = "google_credentials.json"
+CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "google_credentials.json")
 CSV_FILE_PATH = "CRM Leads - Sheet1.csv"
 FIELD_SCHEMA_FILE = "field_schema.json"
 ADMISSION_SCHEMA_FILE = "admission_schema.json"
@@ -704,24 +676,29 @@ def get_value(row, *keys):
 
 
 def read_excel_headers() -> List[str]:
-    """Read header row from the Excel file."""
+    """Read header row from the Excel file. Returns empty list if file not found."""
     if not os.path.exists(EXCEL_FILE_PATH):
-        raise FileNotFoundError(f"Excel file not found: {EXCEL_FILE_PATH}")
-    workbook = openpyxl.load_workbook(EXCEL_FILE_PATH, keep_vba=True)
-    sheet = workbook[EXCEL_SHEET_NAME] if EXCEL_SHEET_NAME else workbook.active
-    headers: List[str] = []
-    for cell in sheet[1]:
-        if not cell.value:
-            continue
-        header = str(cell.value).strip()
-        header_lower = header.lower()
-        if header_lower in EXCLUDED_FIELD_NAMES:
-            continue
-        if any(keyword in header_lower for keyword in EXCLUDED_KEYWORDS):
-            continue
-        headers.append(header)
-    workbook.close()
-    return headers
+        print(f"[read_excel_headers] Excel file not found: {EXCEL_FILE_PATH} - returning empty list")
+        return []
+    try:
+        workbook = openpyxl.load_workbook(EXCEL_FILE_PATH, keep_vba=True)
+        sheet = workbook[EXCEL_SHEET_NAME] if EXCEL_SHEET_NAME else workbook.active
+        headers: List[str] = []
+        for cell in sheet[1]:
+            if not cell.value:
+                continue
+            header = str(cell.value).strip()
+            header_lower = header.lower()
+            if header_lower in EXCLUDED_FIELD_NAMES:
+                continue
+            if any(keyword in header_lower for keyword in EXCLUDED_KEYWORDS):
+                continue
+            headers.append(header)
+        workbook.close()
+        return headers
+    except Exception as e:
+        print(f"[read_excel_headers] Error reading Excel: {e}")
+        return []
 
 
 def read_csv_headers(csv_path: str) -> List[str]:
@@ -871,30 +848,36 @@ def load_schema(schema_type: str = "enquiry") -> List[Dict[str, Any]]:
 
 
 def build_schema_from_excel() -> List[Dict[str, Any]]:
+    """Build schema from Excel file. Returns empty list if file not found."""
     if not os.path.exists(EXCEL_FILE_PATH):
-        raise FileNotFoundError(f"Excel file not found: {EXCEL_FILE_PATH}")
-    wb = openpyxl.load_workbook(EXCEL_FILE_PATH, keep_vba=True, data_only=True)
-    ws = wb[EXCEL_SHEET_NAME] if EXCEL_SHEET_NAME else wb.active
-    headers: List[str] = []
-    for cell in ws[1]:
-        if cell.value and str(cell.value).strip():
-            headers.append(str(cell.value).strip())
-    dropdown_map = read_excel_dropdown_options(wb)
-    # Build a case-insensitive view of dropdown_map
-    dropdown_map_ci: Dict[str, List[str]] = {str(k).strip().lower(): v for k, v in dropdown_map.items()}
-    schema: List[Dict[str, Any]] = []
-    for h in headers:
-        h_lower = h.strip().lower()
-        dtype = 'dropdown' if h_lower in dropdown_map_ci else infer_field_type(h)
-        mapped_type = {'tel': 'phone', 'textarea': 'text'}.get(dtype, dtype)
-        schema.append({
-            "name": h,
-            "label": h,
-            "data_type": mapped_type if mapped_type in {"text","number","date","email","phone","boolean","dropdown"} else "text",
-            "options": dropdown_map_ci.get(h_lower, [])
-        })
-    wb.close()
-    return schema
+        print(f"[build_schema_from_excel] Excel file not found: {EXCEL_FILE_PATH} - returning empty schema")
+        return []
+    try:
+        wb = openpyxl.load_workbook(EXCEL_FILE_PATH, keep_vba=True, data_only=True)
+        ws = wb[EXCEL_SHEET_NAME] if EXCEL_SHEET_NAME else wb.active
+        headers: List[str] = []
+        for cell in ws[1]:
+            if cell.value and str(cell.value).strip():
+                headers.append(str(cell.value).strip())
+        dropdown_map = read_excel_dropdown_options(wb)
+        # Build a case-insensitive view of dropdown_map
+        dropdown_map_ci: Dict[str, List[str]] = {str(k).strip().lower(): v for k, v in dropdown_map.items()}
+        schema: List[Dict[str, Any]] = []
+        for h in headers:
+            h_lower = h.strip().lower()
+            dtype = 'dropdown' if h_lower in dropdown_map_ci else infer_field_type(h)
+            mapped_type = {'tel': 'phone', 'textarea': 'text'}.get(dtype, dtype)
+            schema.append({
+                "name": h,
+                "label": h,
+                "data_type": mapped_type if mapped_type in {"text","number","date","email","phone","boolean","dropdown"} else "text",
+                "options": dropdown_map_ci.get(h_lower, [])
+            })
+        wb.close()
+        return schema
+    except Exception as e:
+        print(f"[build_schema_from_excel] Error reading Excel: {e}")
+        return []
 
 
 def upsert_to_sheet(sheet_name: str, data: Dict[str, Any], schema_type: str = "enquiry", strict_mode: bool = False) -> Dict[str, Any]:
