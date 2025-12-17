@@ -1,0 +1,164 @@
+CRM-Projects/
+│
+├── 📄 README.md                          # Main documentation - START HERE
+├── 📄 QUICK_START.md                    # 5-minute setup guide
+├── 📄 SETUP_GUIDE.md                    # Detailed setup instructions
+├── 📄 GOOGLE_SHEETS_SETUP.md           # Google Sheets configuration
+├── 📄 EXCEL_TEMPLATE_GUIDE.md          # Excel template guide
+├── 📄 TESTING_GUIDE.md                 # Testing procedures
+├── 📄 PROJECT_OVERVIEW.md              # Technical overview
+├── 📄 CHECKLIST.md                     # Setup checklist
+├── 📄 DIRECTORY_STRUCTURE.txt          # This file
+├── 📄 .gitignore                       # Git ignore rules
+│
+├── 🚀 start-app.bat                    # Launch both servers (EASIEST)
+├── 🚀 start-backend.bat                # Launch backend only
+├── 🚀 start-frontend.bat               # Launch frontend only
+├── 🧪 test-api.ps1                     # API testing script
+│
+├── 📁 backend/                          # Python FastAPI Backend
+│   ├── 📄 main.py                      # ⭐ Main FastAPI application
+│   ├── 📄 requirements.txt             # Python dependencies
+│   ├── 📄 README.md                    # Backend documentation
+│   ├── 📄 .env.example                 # Environment variables template
+│   ├── 📄 PLACE_FILES_HERE.txt        # Reminder for required files
+│   │
+│   ├── 📊 CRM_Lead_Template (1).xlsm  # ⚠️ REQUIRED - Place your Excel file here
+│   └── 🔐 google_credentials.json     # ⚠️ REQUIRED - Google service account credentials
+│
+└── 📁 frontend/                         # React Frontend
+    ├── 📄 package.json                 # Node dependencies
+    ├── 📄 vite.config.js              # Vite configuration
+    ├── 📄 tailwind.config.js          # TailwindCSS configuration
+    ├── 📄 postcss.config.js           # PostCSS configuration
+    ├── 📄 index.html                  # HTML template
+    ├── 📄 README.md                   # Frontend documentation
+    │
+    ├── 📁 src/                         # Source code
+    │   ├── 📄 App.jsx                 # ⭐ Main React component
+    │   ├── 📄 main.jsx                # React entry point
+    │   └── 📄 index.css               # Global styles with TailwindCSS
+    │
+    ├── 📁 public/                      # Static assets (auto-created)
+    ├── 📁 node_modules/                # Node packages (auto-created after npm install)
+    └── 📁 dist/                        # Production build (created by npm run build)
+
+
+LEGEND:
+═══════
+📄 = File
+📁 = Directory
+⭐ = Important file
+⚠️ = Required file (must be provided by you)
+🚀 = Executable script
+🧪 = Test script
+📊 = Data file
+🔐 = Credentials file
+
+
+QUICK REFERENCE:
+═══════════════
+
+To Start the App:
+  1. Double-click: start-app.bat
+  2. Or run manually:
+     - Terminal 1: cd backend && venv\Scripts\activate && uvicorn main:app --reload
+     - Terminal 2: cd frontend && npm run dev
+
+Important URLs:
+  - Frontend: http://localhost:3000
+  - Backend API: http://localhost:8000
+  - Health Check: http://localhost:8000/health
+  - API Fields: http://localhost:8000/get_fields
+
+Files You Need to Provide:
+  1. backend/CRM_Lead_Template (1).xlsm
+  2. backend/google_credentials.json
+
+Documentation to Read:
+  1. README.md - Overview and main documentation
+  2. QUICK_START.md - Fast setup (recommended first)
+  3. SETUP_GUIDE.md - Detailed setup instructions
+  4. GOOGLE_SHEETS_SETUP.md - Google configuration
+  5. CHECKLIST.md - Verify your setup
+
+
+INSTALLATION SUMMARY:
+═══════════════════
+
+Backend:
+  cd backend
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+
+Frontend:
+  cd frontend
+  npm install
+
+Then place your files:
+  - CRM_Lead_Template (1).xlsm → backend/
+  - google_credentials.json → backend/
+
+
+FILE SIZES (Approximate):
+═══════════════════════
+
+Documentation:
+  README.md                 ~8 KB
+  SETUP_GUIDE.md           ~6 KB
+  GOOGLE_SHEETS_SETUP.md   ~8 KB
+  EXCEL_TEMPLATE_GUIDE.md  ~5 KB
+  TESTING_GUIDE.md         ~7 KB
+  PROJECT_OVERVIEW.md      ~9 KB
+
+Code:
+  backend/main.py          ~6 KB
+  frontend/src/App.jsx     ~8 KB
+
+Dependencies:
+  backend/venv/            ~50 MB (after installation)
+  frontend/node_modules/   ~200 MB (after installation)
+
+
+PORTS USED:
+═══════════
+
+8000 - Backend (FastAPI)
+3000 - Frontend (React/Vite)
+
+Make sure these ports are available!
+
+
+IGNORED FILES (.gitignore):
+═══════════════════════════
+
+The following are NOT committed to git:
+  - google_credentials.json (security)
+  - *.xlsm files (data)
+  - venv/ (Python virtual environment)
+  - node_modules/ (Node packages)
+  - dist/ (build output)
+  - __pycache__/ (Python cache)
+  - .env files (environment variables)
+
+
+GENERATED DIRECTORIES:
+═══════════════════════
+
+These are created automatically:
+  - backend/venv/ (after python -m venv venv)
+  - backend/__pycache__/ (after running Python)
+  - frontend/node_modules/ (after npm install)
+  - frontend/dist/ (after npm run build)
+
+
+NEED HELP?
+══════════
+
+1. Read QUICK_START.md for fast setup
+2. Check CHECKLIST.md to verify setup
+3. Run test-api.ps1 to test backend
+4. See TESTING_GUIDE.md for detailed tests
+5. Review error messages in terminals
+6. Check browser console (F12) for frontend errors

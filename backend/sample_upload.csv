@@ -1,0 +1,4 @@
+Date,MemberKey,patient_name,mobile_number,email,status
+03/11/2025,MID-2025-11-03-001,John Doe,1234567890,john@example.com,Active
+04/11/2025,MID-2025-11-04-002,Jane Smith,0987654321,jane@example.com,Active
+05/11/2025,MID-2025-11-05-003,Bob Wilson,1122334455,bob@example.com,Inactive

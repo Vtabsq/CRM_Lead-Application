@@ -1,0 +1,98 @@
+================================================================================
+                    EMAIL NOTIFICATION SETUP INSTRUCTIONS
+                         Gmail API Method (Recommended)
+================================================================================
+
+CURRENT STATUS:
+- Backend: ✓ Working
+- Frontend: ✓ Working  
+- Google Sheets: ✓ Working
+- Email Notifications: ❌ Not working (Gmail SMTP blocked)
+
+SOLUTION: Use Gmail API instead of SMTP
+
+================================================================================
+                              STEP-BY-STEP GUIDE
+================================================================================
+
+STEP 1: Enable Gmail API
+-------------------------
+1. Go to: https://console.cloud.google.com/
+2. Select project: "crm-lead-form"
+3. Click: "APIs & Services" → "Library"
+4. Search: "Gmail API"
+5. Click "ENABLE"
+
+STEP 2: Create OAuth 2.0 Credentials
+-------------------------------------
+1. Go to: "APIs & Services" → "Credentials"
+2. Click: "+ CREATE CREDENTIALS" → "OAuth client ID"
+
+3. If prompted to configure consent screen:
+   a. Click "CONFIGURE CONSENT SCREEN"
+   b. Select: "External"
+   c. Fill in:
+      - App name: CRM Lead Form
+      - User support email: harishkadhi18022001@gmail.com
+      - Developer contact: harishkadhi18022001@gmail.com
+   d. Click "SAVE AND CONTINUE" through all steps
+   e. Add test user: harishkadhi18022001@gmail.com
+   f. Click "SAVE AND CONTINUE"
+
+4. Back to Credentials page:
+   a. Click: "+ CREATE CREDENTIALS" → "OAuth client ID"
+   b. Application type: "Desktop app"
+   c. Name: "CRM Email Sender"
+   d. Click "CREATE"
+
+5. Download the credentials:
+   a. Click the DOWNLOAD button (⬇️ icon)
+   b. Save the file
+   c. Rename it to: gmail_oauth_credentials.json
+   d. Move it to: C:\Users\91733\Downloads\CRM-Projects\backend\
+
+STEP 3: Run Setup Script
+-------------------------
+1. Open PowerShell in the project folder
+2. Run: cd backend
+3. Run: ..\venv\Scripts\python.exe setup_gmail_api.py
+4. A browser will open - login with: harishkadhi18022001@gmail.com
+5. Click "Allow" to grant permissions
+6. Close the browser when done
+
+STEP 4: Restart Backend
+------------------------
+1. Stop the current backend (Ctrl+C)
+2. Run: cd ..
+3. Run: .\start-backend.bat
+
+DONE! Email notifications will now work via Gmail API!
+
+================================================================================
+                                  BENEFITS
+================================================================================
+
+✓ Emails will be sent reliably
+✓ Emails will appear in your Gmail Sent folder
+✓ No more Gmail blocking issues
+✓ Uses your actual Gmail account
+✓ Completely FREE
+
+================================================================================
+                              TROUBLESHOOTING
+================================================================================
+
+If you get "gmail_oauth_credentials.json not found":
+→ Make sure you downloaded and renamed the file correctly
+→ Make sure it's in the backend folder
+
+If browser doesn't open:
+→ Copy the URL from terminal and paste in browser manually
+
+If you get "Access blocked":
+→ Make sure you added harishkadhi18022001@gmail.com as a test user
+→ In Google Cloud Console → OAuth consent screen → Test users
+
+================================================================================
+
+Need help? Check GMAIL_API_SETUP.md for detailed instructions.

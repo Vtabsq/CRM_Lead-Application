@@ -1,0 +1,88 @@
+// This file contains ONLY the discharge-related functions to be added to BedManagement.jsx
+// Add these functions after submitAllocation and before groupedBeds
+
+    const handleBedClick = (bed) => {
+        if (bed.status === 'Occupied') {
+            setSelectedPatient(bed);
+            setEditingDischargeDate(bed.discharge_date || '');
+            setShowPatientModal(true);
+        } else {
+            handleAllocateClick(bed);
+        }
+    };
+
+    const handleUpdateDischargeDate = async () => {
+        if (!selectedPatient) return;
+
+        try {
+            await axios.post(`${API_BASE_URL}/api/beds/update-discharge`, null, {
+                params: {
+                    room_no: selectedPatient.room_no,
+                    bed_index: selectedPatient.bed_index,
+                    discharge_date: editingDischargeDate
+                }
+            });
+            setShowPatientModal(false);
+            setSelectedPatient(null);
+            fetchBeds();
+            alert("Discharge date updated successfully!");
+        } catch (error) {
+            alert("Update failed: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const handleDischarge = async () => {
+        if (!selectedPatient) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedPatient.discharge_date) {
+            const dischargeDate = new Date(selectedPatient.discharge_date);
+            dischargeDate.setHours(0, 0, 0, 0);
+            
+            if (dischargeDate > today) {
+                alert(`Cannot discharge patient. Discharge date is ${selectedPatient.discharge_date}. Please wait until discharge date or update it.`);
+                return;
+            }
+        }
+
+        if (!window.confirm(`Are you sure you want to discharge ${selectedPatient.patient_name}?`)) {
+            return;
+        }
+
+        try {
+            await axios.post(`${API_BASE_URL}/api/beds/discharge`, null, {
+                params: {
+                    room_no: selectedPatient.room_no,
+                    bed_index: selectedPatient.bed_index
+                }
+            });
+            setShowPatientModal(false);
+            setSelectedPatient(null);
+            fetchBeds();
+            alert("Patient discharged successfully!");
+        } catch (error) {
+            alert("Discharge failed: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const calculateDaysOccupied = (admissionDate) => {
+        if (!admissionDate) return 0;
+        const admission = new Date(admissionDate);
+        const today = new Date();
+        const diffTime = Math.abs(today - admission);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
+    const truncateName = (name, maxLength = 10) => {
+        if (!name) return '';
+        return name.length > maxLength ? name.substring(0, maxLength) + '...' : name;
+    };
+
+    const getLastDigits = (id, digits = 5) => {
+        if (!id) return '';
+        const idStr = String(id);
+        return idStr.length > digits ? '...' + idStr.slice(-digits) : idStr;
+    };
