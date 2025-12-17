@@ -13,3 +13,5 @@ flask==3.0.0
 twilio==8.10.0
 requests==2.31.0
 httpx==0.25.0
+reportlab==4.0.7
+pandas==2.1.3
