@@ -39,6 +39,39 @@ from dropdown_helpers import (
 # Trigger reload for schema update
 load_dotenv()
 
+# ============== Decode Base64 Excel Template (for Render deployment) ==============
+import base64
+
+def ensure_excel_template():
+    """
+    If BASE64_TEMPLATE_PATH is set (Render deployment), decode the base64 file
+    into the actual Excel template before the app needs it.
+    """
+    base64_path = os.getenv("BASE64_TEMPLATE_PATH")
+    excel_path = os.getenv("EXCEL_FILE_PATH", "CRM_Lead_Template (1).xlsm")
+    
+    if not base64_path:
+        return  # Not using base64 encoding, skip
+    
+    if os.path.exists(excel_path):
+        return  # Already decoded
+    
+    if not os.path.exists(base64_path):
+        print(f"[Startup] Warning: BASE64_TEMPLATE_PATH set but file not found: {base64_path}")
+        return
+    
+    try:
+        with open(base64_path, "rb") as src:
+            decoded = base64.b64decode(src.read())
+        with open(excel_path, "wb") as dst:
+            dst.write(decoded)
+        print(f"[Startup] Decoded Excel template from {base64_path} to {excel_path}")
+    except Exception as e:
+        print(f"[Startup] Error decoding Excel template: {e}")
+
+ensure_excel_template()
+# ==================================================================================
+
 app = FastAPI()
 
 SETTINGS_FILE = "settings.json"
