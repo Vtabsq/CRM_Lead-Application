@@ -1,0 +1,12 @@
+{
+  "single_bed_price": 500.0,
+  "twin_bed_price": 400.0,
+  "icu_bed_price": 300.0,
+  "general_bed_price": 200.0,
+  "nurse_fee": 500.0,
+  "bed_service_charge": 100.0,
+  "consultation_fee": 150.0,
+  "registration_fee": 250.0,
+  "medication_fee": 1000.0,
+  "miscellaneous_fee": 350.0
+}

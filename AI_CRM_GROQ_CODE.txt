@@ -1,0 +1,227 @@
+============================
+AI CRM FRONTEND + BACKEND (GROQ INTEGRATION)
+============================
+
+1. FRONTEND (React / Vite)
+-------------------------
+File: frontend/src/App.jsx
+
+// --- AI Chat state + hooks ---
+const [showAIChat, setShowAIChat] = useState(false);
+const [aiChatMessages, setAiChatMessages] = useState([]);
+const [aiChatInput, setAiChatInput] = useState('');
+const [aiChatFilter, setAiChatFilter] = useState('today');
+const [aiChatLoading, setAiChatLoading] = useState(false);
+const [aiChatConnected, setAiChatConnected] = useState(true);
+const chatMessagesEndRef = useRef(null);
+
+// Show / hide chat & welcome message
+const toggleAIChat = () => {
+  setShowAIChat(!showAIChat);
+  if (!showAIChat && aiChatMessages.length === 0) {
+    setAiChatMessages([{
+      sender: 'ai',
+      text: "Hello! I'm your AI CRM Assistant. Ask me about follow-ups, member statuses, or any CRM data.",
+      timestamp: new Date()
+    }]);
+  }
+};
+
+// Submit message to backend AI endpoint
+const sendAIChatMessage = async () => {
+  if (!aiChatInput.trim()) return;
+  const userMessage = { sender: 'user', text: aiChatInput, timestamp: new Date() };
+  setAiChatMessages(prev => [...prev, userMessage]);
+  setAiChatInput('');
+  setAiChatLoading(true);
+
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/ai-crm/chat`, {
+      query: aiChatInput,
+      filter: aiChatFilter
+    });
+
+    const aiMessage = {
+      sender: 'ai',
+      text: response.data.response,
+      member_ids: response.data.member_ids || [],
+      timestamp: new Date()
+    };
+
+    setAiChatMessages(prev => [...prev, aiMessage]);
+    setAiChatConnected(response.data.connected !== false);
+  } catch (error) {
+    console.error('AI Chat error:', error);
+    setAiChatMessages(prev => [...prev, {
+      sender: 'ai',
+      text: 'Sorry, I encountered an error. Please try again.',
+      timestamp: new Date()
+    }]);
+    setAiChatConnected(false);
+  } finally {
+    setAiChatLoading(false);
+  }
+};
+
+// Chat input helper: send on Enter
+const handleAIChatKeyPress = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendAIChatMessage();
+  }
+};
+
+// Popup window markup (Tailwind styling). Renders toggle button, message list, filter select, textarea input, etc.
+// - Calls sendAIChatMessage()
+// - Displays aiChatMessages history
+// - Shows connection badge (Connected / Offline)
+
+
+2. BACKEND (FastAPI)
+--------------------
+File: backend/main.py
+
+# --- Environment configuration ---
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'groq')
+AI_ENABLED = os.getenv('AI_ENABLED', 'True').lower() == 'true'
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.1-70b-versatile')
+GROQ_API_BASE_URL = 'https://api.groq.com/openai/v1'
+
+# Optional Hugging Face fallback
+HF_TOKEN = os.getenv('HF_TOKEN', '')
+HF_MODEL = os.getenv('HF_MODEL', 'mistralai/Mistral-7B-Instruct-v0.2')
+HF_API_BASE_URL = os.getenv('HF_API_BASE_URL', 'https://router.huggingface.co/v1')
+HF_ENABLED = os.getenv('HF_ENABLED', 'False').lower() == 'true'
+
+
+# --- Groq call helper ---
+async def query_groq_ai(user_query: str, crm_data_summary: str, member_ids: List[str]) -> Optional[str]:
+    if not GROQ_API_KEY:
+        return None
+
+    system_prompt = """You are an AI CRM assistant for an elderly care service.
+You help staff quickly understand customer data and follow-up requirements.
+Be concise, professional, and helpful.
+
+IMPORTANT: Member names are shown as "AttenderName/PatientName" when both exist. Search BOTH names when looking for a person.
+
+When users ask for "names", provide the patient/customer names.
+When users ask for "member IDs" or "IDs", provide the member IDs.
+When users ask about locations (e.g., city, area, where), provide the location for each relevant member.
+When users ask for phone numbers (e.g., phone, mobile, contact number), provide the phone number for each relevant member.
+Otherwise, provide both name and ID in format: "Name (ID)" and include location and phone if it adds clarity."""
+
+    user_prompt = f"""CRM Data Context:
+{crm_data_summary}
+
+User Question: {user_query}
+
+Provide a clear, concise answer based on the CRM data above.
+If the user asks for names, list the names from the member details.
+If the user asks for IDs, list the member IDs.
+If the user asks about location, provide the member locations alongside their names or IDs.
+If the user asks for phone numbers, provide the phone/mobile number alongside the name or ID.
+Otherwise, provide both name and ID, including location and phone if helpful."""
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        "max_tokens": 500,
+        "temperature": 0.7,
+        "top_p": 0.9
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(
+            f"{GROQ_API_BASE_URL}/chat/completions",
+            headers=headers,
+            json=payload
+        )
+
+    if response.status_code == 200:
+        result = response.json()
+        ai_response = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+        if ai_response:
+            return ai_response.strip()
+    else:
+        print(f"Groq API error: {response.status_code} - {response.text}")
+    return None
+
+
+# --- AI CRM Chat endpoint ---
+@app.post("/api/ai-crm/chat")
+async def ai_crm_chat(request: AIChatRequest, background_tasks: BackgroundTasks):
+    if not os.path.exists(CREDENTIALS_FILE):
+        return {
+            "response": "Google Sheets is not connected. Please configure credentials.",
+            "member_ids": [],
+            "connected": False
+        }
+
+    # Connect to Google Sheet, locate worksheet, fetch all rows
+    # ... (reads headers, detects columns for member id, follow-up dates, status, location, etc.)
+
+    # Build query_filtered_rows using smart keyword matching (scan ALL rows)
+    # Apply date filters (today / this_week / overdue)
+
+    # Extract member IDs, build summaries, member metadata (names, locations, phone numbers)
+
+    crm_summary = build_crm_summary(...)
+
+    # Call Groq (primary) or Hugging Face fallback
+    ai_response = await query_groq_ai(request.query, crm_summary, member_ids)
+    if not ai_response:
+        ai_response = await query_huggingface_ai(...)
+
+    if not ai_response:
+        ai_response = generate_fallback_response(...)
+
+    # Optional background email follow-up tasks
+    if ai_response and recipient_email:
+        background_tasks.add_task(send_follow_email, ...)
+
+    return {
+        "response": ai_response,
+        "member_ids": member_ids,
+        "connected": True,
+        "count": len(member_ids)
+    }
+
+
+3. ENVIRONMENT VARIABLES (.env)
+--------------------------------
+AI_PROVIDER=groq
+AI_ENABLED=True
+GROQ_API_KEY=<your_groq_key>
+GROQ_MODEL=llama-3.3-70b-versatile
+HF_TOKEN=<optional_hf_token>
+HF_ENABLED=False
+
+
+4. REQUEST FLOW SUMMARY
+------------------------
+Frontend (App.jsx)
+  -> axios POST http://localhost:8000/api/ai-crm/chat with { query, filter }
+Backend (FastAPI)
+  -> Reads Google Sheets data, builds CRM context
+  -> Calls query_groq_ai() with GROQ API key + prompt
+  -> Falls back to Hugging Face / rule-based response if needed
+  -> Returns JSON { response, member_ids, connected, count }
+Frontend
+  -> Renders AI message, member IDs, connection badge in chat UI
+
+
+5. KEY FILES
+------------
+frontend/src/App.jsx           (AI chat UI + axios call)
+backend/main.py                (Groq integration + endpoint)
+backend/AI_INTEGRATION_README.md (Full documentation & tests)

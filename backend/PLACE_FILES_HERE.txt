@@ -1,0 +1,28 @@
+📁 REQUIRED FILES FOR BACKEND
+================================
+
+Please place the following files in this directory (backend/):
+
+1. CRM_Lead_Template (1).xlsm
+   - Your Excel macro file with field names in the first row
+   - See EXCEL_TEMPLATE_GUIDE.md for details
+
+2. google_credentials.json
+   - Google service account credentials
+   - See GOOGLE_SHEETS_SETUP.md for setup instructions
+
+⚠️ IMPORTANT SECURITY NOTES:
+- Never commit these files to version control
+- They are already listed in .gitignore
+- Keep google_credentials.json secure
+
+✅ VERIFICATION:
+After placing the files, run:
+- uvicorn main:app --reload
+- Visit: http://localhost:8000/health
+- Check that excel_file and google_credentials are both true
+
+📚 For detailed instructions, see:
+- ../SETUP_GUIDE.md
+- ../GOOGLE_SHEETS_SETUP.md
+- ../EXCEL_TEMPLATE_GUIDE.md

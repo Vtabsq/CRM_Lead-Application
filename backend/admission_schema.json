@@ -1,0 +1,302 @@
+[
+  {
+    "name": "patient_name",
+    "label": "Patient Name",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "patient_last_name",
+    "label": "Patient Last Name",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "gender",
+    "label": "Gender",
+    "data_type": "dropdown",
+    "options": [
+      "Male",
+      "Female",
+      "Other"
+    ]
+  },
+  {
+    "name": "date_of_birth",
+    "label": "Date of Birth",
+    "data_type": "date",
+    "options": []
+  },
+  {
+    "name": "age",
+    "label": "Age",
+    "data_type": "number",
+    "options": []
+  },
+  {
+    "name": "patient_blood",
+    "label": "Patient Blood",
+    "data_type": "dropdown",
+    "options": [
+      "A+",
+      "A-",
+      "B+",
+      "B-",
+      "AB+",
+      "AB-",
+      "O+",
+      "O-",
+      "Others"
+    ]
+  },
+  {
+    "name": "patient_marital_status",
+    "label": "Patient Marital Status",
+    "data_type": "dropdown",
+    "options": [
+      "Single",
+      "Married",
+      "other"
+    ]
+  },
+  {
+    "name": "nationality",
+    "label": "Nationality",
+    "data_type": "dropdown",
+    "options": [
+      "Indian",
+      "Others"
+    ]
+  },
+  {
+    "name": "religion",
+    "label": "Religion",
+    "data_type": "dropdown",
+    "options": [
+      "Hinduism",
+      "Islam",
+      "Christianity",
+      "Others"
+    ]
+  },
+  {
+    "name": "aadhaar",
+    "label": "Aadhaar",
+    "data_type": "number",
+    "options": []
+  },
+  {
+    "name": "id_proof_type",
+    "label": "ID Proof Type",
+    "data_type": "dropdown",
+    "options": [
+      "Passport",
+      "Voter ID",
+      "DL",
+      "PAN"
+    ]
+  },
+  {
+    "name": "id_proof_number",
+    "label": "ID Proof Number",
+    "data_type": "number",
+    "options": []
+  },
+  {
+    "name": "door_number",
+    "label": "Door Number",
+    "data_type": "number",
+    "options": []
+  },
+  {
+    "name": "street",
+    "label": "Street",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "district",
+    "label": "District",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "district_other",
+    "label": "District Other",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "state",
+    "label": "State",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "pin_code",
+    "label": "Pin Code",
+    "data_type": "number",
+    "options": []
+  },
+  {
+    "name": "relational_name",
+    "label": "Relational Name",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "relational_relationship",
+    "label": "Relational Relationship",
+    "data_type": "dropdown",
+    "options": [
+      "Spouse",
+      "Parents",
+      "Child",
+      "Sibiling",
+      "Friend",
+      "Caregiver"
+    ]
+  },
+  {
+    "name": "relational_mobile",
+    "label": "Relational Mobile",
+    "data_type": "phone",
+    "options": []
+  },
+  {
+    "name": "relational_mobile_alternative",
+    "label": "Relational Mobile Alternative",
+    "data_type": "phone",
+    "options": []
+  },
+  {
+    "name": "emergency_address",
+    "label": "Emergency Address",
+    "data_type": "textarea",
+    "options": []
+  },
+  {
+    "name": "patient_current_status",
+    "label": "Patient Current Status",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "patient_surgery",
+    "label": "patient surgery",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "patient_medical_history",
+    "label": "Patient Medical History",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "patient_allergy",
+    "label": "Patient Allergy",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "room_type",
+    "label": "Room Type",
+    "data_type": "dropdown",
+    "options": [
+      "Single",
+      "Twin",
+      "ICU",
+      "General"
+    ]
+  },
+  {
+    "name": "check_in_date",
+    "label": "Check in Date",
+    "data_type": "date",
+    "options": []
+  },
+  {
+    "name": "check_out_date",
+    "label": "Check out Date",
+    "data_type": "date",
+    "options": []
+  },
+  {
+    "name": "attender_name",
+    "label": "Attender Name",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "caretaker/nurse_name",
+    "label": "Caretaker/Nurse_name",
+    "data_type": "text",
+    "options": []
+  },
+  {
+    "name": "hospital_location",
+    "label": "Hospital Location",
+    "data_type": "dropdown",
+    "options": [
+      "Chennai",
+      "Coimbatore",
+      "Madurai",
+      "Tiruchirappalli",
+      "Salam",
+      "Tirunelveli",
+      "Tiruppur",
+      "Vellore",
+      "Thoothukudi",
+      "Dindigul",
+      "Thanjavur",
+      "Nagercoil",
+      "Erode",
+      "Karur",
+      "Nagapattinam",
+      "Cuddalore",
+      "Kanchipuram",
+      "Kumbakonam",
+      "Ambur",
+      "Ariyalur",
+      "Dharmapuri",
+      "Namakkal",
+      "Perambalur",
+      "Pudukkottai",
+      "Ramanathapuram",
+      "Sivaganga",
+      "Theni",
+      "Tenkasi",
+      "Villupuram",
+      "Virudhunagar",
+      "Hosur"
+    ]
+  },
+  {
+    "name": "pain_point",
+    "label": "Pain Point",
+    "data_type": "dropdown",
+    "options": [
+      "Assisted Living",
+      "Dementia & Alzheimers",
+      "Parkinson's",
+      "Post-operative",
+      "Stroke",
+      "Tracheostomy",
+      "Palliative Care",
+      "Others"
+    ]
+  },
+  {
+    "name": "providing_services",
+    "label": "providingservices",
+    "data_type": "dropdown",
+    "options": []
+  },
+  {
+    "name": "city",
+    "label": "City",
+    "data_type": "text",
+    "options": []
+  }
+]
