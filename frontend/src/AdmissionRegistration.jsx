@@ -7,8 +7,8 @@ import {
 
 import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
-import {
 import API_BASE_URL from './config';
+import {
     indianStates,
     getDistrictsForState,
     getCitiesForDistrict
