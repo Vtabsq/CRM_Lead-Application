@@ -1904,6 +1904,6 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                 )}
             </div>
         );
-    };
+};
 
-    export default AdmissionRegistration;
+export default AdmissionRegistration;
