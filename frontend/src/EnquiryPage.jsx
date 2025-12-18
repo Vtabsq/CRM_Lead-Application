@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle, XCircle, User, Phone, Edit3, Upload } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 const FIELDS_PER_PAGE = 10;
 const FOLLOW_UP_PAGE_INDEX = 2;
 

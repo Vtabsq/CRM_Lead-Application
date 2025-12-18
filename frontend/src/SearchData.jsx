@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, RefreshCw, Table, ChevronLeft, ChevronRight, Edit2, X, Save } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 const COLUMNS_PER_PAGE = 5;
 
 const SearchData = () => {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Sparkles, X, Loader2, Send } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 
 const AIChat = () => {
     const [showAIChat, setShowAIChat] = useState(false);

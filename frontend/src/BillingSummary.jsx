@@ -6,7 +6,7 @@ const normalize_header = (h) => {
     return str(h).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
 }
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 
 const BillingSummary = () => {
     // Search & Data State

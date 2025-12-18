@@ -18,8 +18,8 @@ import BedManagement from './BedManagement';
 import SearchData from './SearchData';
 import AIChat from './AIChat';
 
-// Constants
-const API_BASE_URL = 'http://localhost:8000';
+// Import API configuration
+import API_BASE_URL from './config';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Save, Trash2, Edit3, Upload } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 
 const SchemaEditor = () => {
     const [schemaType, setSchemaType] = useState('enquiry'); // 'enquiry' or 'admission'
