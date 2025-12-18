@@ -24,17 +24,11 @@ if __name__ == "__main__":
         print("\nThe server will start, but some features may not work.")
         print("Please place the required files in the backend/ folder.\n")
     
-<<<<<<< HEAD
-    print(">> Starting CRM Lead Form Backend...")
-    print(">> Server will be available at: http://localhost:8000")
-    print(">> API Documentation: http://localhost:8000/docs")
-    print(">> Health Check: http://localhost:8000/health")
-=======
+    
     print("🚀 Starting CRM Lead Form Backend...")
     print("📍 Server will be available at: http://localhost:8000")
     print("📊 API Documentation: http://localhost:8000/docs")
     print("🏥 Health Check: http://localhost:8000/health")
->>>>>>> bb192ef08f7bfaf739cd63abf2ba26a44c5078da
     print("\nPress Ctrl+C to stop the server\n")
     
     uvicorn.run(
