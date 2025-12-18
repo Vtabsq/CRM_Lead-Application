@@ -273,7 +273,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
         const find = (regex) => patientHeaders.findIndex(h => regex.test(h));
         return {
             idIdx: find(/member.*id|key/i),
-            nameIdx: find(/name|patient/i),
+            nameIdx: find(/^patient.*name|^name$/i),
             genderIdx: find(/gender|sex/i),
             phoneIdx: find(/mobile|phone|contact/i),
             emailIdx: find(/email/i),
@@ -301,7 +301,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
             } else if (typeof row === 'object') {
                 const keys = Object.keys(row);
                 const idKey = keys.find(k => /member.*id|key/i.test(k));
-                const nameKey = keys.find(k => /name|patient/i.test(k));
+                const nameKey = keys.find(k => /^patient.*name|^name$/i.test(k));
                 if (idKey) id = String(row[idKey]).trim();
                 if (nameKey) name = row[nameKey];
             }
