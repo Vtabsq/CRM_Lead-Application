@@ -4,6 +4,7 @@ Usage: python run.py
 """
 import uvicorn
 import os
+from main import app  # Import app from main.py to expose it for uvicorn
 
 if __name__ == "__main__":
     # Check for required files before starting
