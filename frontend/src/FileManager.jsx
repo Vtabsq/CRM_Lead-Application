@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle, AlertCircle, RefreshCw, Trash2, Calendar, Filter, AlertOctagon, Database } from 'lucide-react';
+import API_BASE_URL from './config';
 
 
 const FileManager = () => {
@@ -41,7 +42,7 @@ const FileManager = () => {
 
     const fetchFields = async () => {
         try {
-            const response = await fetch('http://localhost:8000/get_sheet_headers');
+            const response = await fetch(`${API_BASE_URL}/get_sheet_headers`);
             const data = await response.json();
             if (data.fields) {
                 const colNames = data.fields.map(f => f.name);
@@ -70,7 +71,7 @@ const FileManager = () => {
         if (!uploadResult || !uploadResult.file_path) return;
         setConfirming(true);
         try {
-            const response = await fetch('http://localhost:8000/confirm_upload', {
+            const response = await fetch(`${API_BASE_URL}/confirm_upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ file_path: uploadResult.file_path }),
@@ -131,7 +132,7 @@ const FileManager = () => {
         formData.append("file", file);
 
         try {
-            const response = await fetch('http://localhost:8000/upload_file', {
+            const response = await fetch(`${API_BASE_URL}/upload_file`, {
                 method: 'POST',
                 body: formData,
             });
@@ -226,7 +227,7 @@ const FileManager = () => {
                 preview_columns: Object.keys(selectedColumns).filter(k => selectedColumns[k])
             };
 
-            const response = await fetch('http://localhost:8000/delete/preview', {
+            const response = await fetch(`${API_BASE_URL}/delete/preview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -250,7 +251,7 @@ const FileManager = () => {
                 filters,
                 date_column: dateColumn
             };
-            const response = await fetch('http://localhost:8000/delete/confirm', {
+            const response = await fetch(`${API_BASE_URL}/delete/confirm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -574,7 +575,7 @@ const FileManager = () => {
                             </div>
                             <div className="flex gap-3">
                                 <a
-                                    href="http://localhost:8000/download_template?format=csv"
+                                    href=`${API_BASE_URL}/download_template?format=csv`
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center px-4 py-2 bg-white text-green-600 border border-green-200  font-bold shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
@@ -583,7 +584,7 @@ const FileManager = () => {
                                     Download CSV
                                 </a>
                                 <a
-                                    href="http://localhost:8000/download_template" // Default handles xlsx
+                                    href=`${API_BASE_URL}/download_template` // Default handles xlsx
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center px-4 py-2 bg-white text-green-600 border border-green-200  font-bold shadow-sm hover:shadow-md hover:bg-green-50 transition-all"

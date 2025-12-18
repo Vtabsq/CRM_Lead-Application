@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import API_BASE_URL from './config';
 
 const DropdownManager = () => {
     const [dropdownFields, setDropdownFields] = useState({});
@@ -16,7 +17,7 @@ const DropdownManager = () => {
     const fetchDropdownOptions = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:8000/api/dropdown-options');
+            const response = await fetch(`${API_BASE_URL}/api/dropdown-options`);
             const data = await response.json();
 
             if (data.status === 'success') {
@@ -40,7 +41,7 @@ const DropdownManager = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/dropdown-options/${encodeURIComponent(fieldName)}`, {
+            const response = await fetch(`${API_BASE_URL}/api/dropdown-options/${encodeURIComponent(fieldName)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ option: newOption })
@@ -68,7 +69,7 @@ const DropdownManager = () => {
 
         try {
             const response = await fetch(
-                `http://localhost:8000/api/dropdown-options/${encodeURIComponent(fieldName)}/${encodeURIComponent(option)}`,
+                `${API_BASE_URL}/api/dropdown-options/${encodeURIComponent(fieldName)}/${encodeURIComponent(option)}`,
                 { method: 'DELETE' }
             );
 
@@ -89,7 +90,7 @@ const DropdownManager = () => {
     const handleSync = async () => {
         try {
             setSyncing(true);
-            const response = await fetch('http://localhost:8000/api/sync-schema-sheet', {
+            const response = await fetch(`${API_BASE_URL}/api/sync-schema-sheet`, {
                 method: 'POST'
             });
 
