@@ -575,7 +575,7 @@ const FileManager = () => {
                             </div>
                             <div className="flex gap-3">
                                 <a
-                                    href=`${API_BASE_URL}/download_template?format=csv`
+                                    href={`${API_BASE_URL}/download_template?format=csv`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center px-4 py-2 bg-white text-green-600 border border-green-200  font-bold shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
@@ -584,7 +584,7 @@ const FileManager = () => {
                                     Download CSV
                                 </a>
                                 <a
-                                    href=`${API_BASE_URL}/download_template` // Default handles xlsx
+                                    href={`${API_BASE_URL}/download_template`} // Default handles xlsx
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center px-4 py-2 bg-white text-green-600 border border-green-200  font-bold shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
