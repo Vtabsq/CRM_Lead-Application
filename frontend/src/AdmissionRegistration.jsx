@@ -322,45 +322,58 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
             const currentItem = { ...list[index] };
 
             if (!selectedOption) {
-                currentItem.memberId = val; // Just set the ID
+                currentItem.member_id = val; // Just set the ID
                 list[index] = currentItem;
                 return list;
             }
 
             const row = selectedOption.original;
-            // SMART PARSER implementation
-            let rowVals = [];
-            if (Array.isArray(row)) rowVals = row;
-            else if (typeof row === 'object') rowVals = Object.values(row);
-            rowVals = rowVals.map(v => String(v).trim());
 
+            // Use header-based extraction instead of smart parser
             let foundId = '', foundGender = '', foundEmail = '', foundPhone = '', foundDob = '', foundName = '', foundAge = '';
 
-            const idRegex = /MID-\d{4}-\d{2}-\d{2}-\d+/i;
-            const genderRegex = /^(male|female|other)$/i;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const phoneRegex = /^[6-9]\d{9}$/;
-            const dateRegex = /^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/;
+            if (Array.isArray(row)) {
+                const { idIdx, nameIdx, genderIdx, phoneIdx, emailIdx, dobIdx } = headerIndices;
 
-            rowVals.forEach((v) => {
-                if (!v) return;
-                if (!foundId && idRegex.test(v)) foundId = v;
-                else if (!foundGender && genderRegex.test(v)) foundGender = v;
-                else if (!foundEmail && emailRegex.test(v)) foundEmail = v;
-                else if (!foundPhone && phoneRegex.test(v.replace(/\D/g, ''))) foundPhone = v;
-                else if (!foundDob && dateRegex.test(v)) foundDob = v;
-            });
+                if (idIdx !== -1) foundId = String(row[idIdx] || '').trim();
+                if (nameIdx !== -1) foundName = String(row[nameIdx] || '').trim();
+                if (genderIdx !== -1) foundGender = String(row[genderIdx] || '').trim();
+                if (phoneIdx !== -1) foundPhone = String(row[phoneIdx] || '').trim();
+                if (emailIdx !== -1) foundEmail = String(row[emailIdx] || '').trim();
+                if (dobIdx !== -1) foundDob = String(row[dobIdx] || '').trim();
 
-            for (let i = 0; i < Math.min(rowVals.length, 6); i++) {
-                const v = rowVals[i];
-                if (!v || v === foundId || dateRegex.test(v) || genderRegex.test(v) || emailRegex.test(v) || /\d/.test(v)) continue;
-                if (!foundName) { foundName = v; break; }
+                // Try to find age in the row
+                row.forEach(v => {
+                    const val = String(v).trim();
+                    if (/^\d{1,3}$/.test(val) && Number(val) > 0 && Number(val) < 120 && val.length < 4 && !foundAge) {
+                        foundAge = val;
+                    }
+                });
+            } else if (typeof row === 'object') {
+                const keys = Object.keys(row);
+
+                const idKey = keys.find(k => /member.*id|key/i.test(k));
+                const nameKey = keys.find(k => /^patient.*name|^name$/i.test(k));
+                const genderKey = keys.find(k => /gender|sex/i.test(k));
+                const phoneKey = keys.find(k => /mobile|phone|contact/i.test(k));
+                const emailKey = keys.find(k => /email/i.test(k));
+                const dobKey = keys.find(k => /dob|birth/i.test(k));
+
+                if (idKey) foundId = String(row[idKey] || '').trim();
+                if (nameKey) foundName = String(row[nameKey] || '').trim();
+                if (genderKey) foundGender = String(row[genderKey] || '').trim();
+                if (phoneKey) foundPhone = String(row[phoneKey] || '').trim();
+                if (emailKey) foundEmail = String(row[emailKey] || '').trim();
+                if (dobKey) foundDob = String(row[dobKey] || '').trim();
+
+                // Try to find age
+                Object.values(row).forEach(v => {
+                    const val = String(v).trim();
+                    if (/^\d{1,3}$/.test(val) && Number(val) > 0 && Number(val) < 120 && val.length < 4 && !foundAge) {
+                        foundAge = val;
+                    }
+                });
             }
-
-            rowVals.forEach(v => {
-                if (!v) return;
-                if (/^\d{1,3}$/.test(v) && Number(v) > 0 && Number(v) < 120 && v.length < 4 && !foundAge) foundAge = v;
-            });
 
             const nameParts = (foundName || 'Unknown').split(' ');
             const firstName = nameParts[0] || '';
