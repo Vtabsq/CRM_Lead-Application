@@ -262,6 +262,8 @@ function App() {
         </div>
       </div>
     );
+}
+
   }
 
   // Main App Structure
