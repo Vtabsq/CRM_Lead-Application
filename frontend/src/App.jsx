@@ -8,7 +8,7 @@ import Home from './Home';
 import EnquiryPage from './EnquiryPage';
 import AdmissionRegistration from './AdmissionRegistration';
 import BillingSummary from './BillingSummary';
-import AnalyticsReport from './AnalyticsReport';
+import AnalysisReport from './AnalysisReport';
 import SchemaEditor from './SchemaEditor';
 import ChargeSummary from './ChargeSummary';
 import Documents from './Documents';
@@ -16,23 +16,23 @@ import NotificationSettings from './NotificationSettings';
 import FileManager from './FileManager';
 import BedManagement from './BedManagement';
 import SearchData from './SearchData';
-import InvoiceList from './InvoiceList';
-import InvoiceCreateNew from './InvoiceCreateNew';
-import InvoicePageNew from './InvoicePageNew';
-import InvoiceUpload from './InvoiceUpload';
-import InvoiceMonitor from './InvoiceMonitor';
-import ServiceCatalog from './ServiceCatalog';
-import InvoiceView from './InvoiceView';
-import HomeCareList from './HomeCareList';
-import HomeCareCreate from './HomeCareCreate';
-import HomeCareEdit from './HomeCareEdit';
-import HomeCareBillingHistory from './HomeCareBillingHistory';
-import HomeCareBillingPreview from './HomeCareBillingPreview';
-import PatientAdmissionList from './PatientAdmissionList';
-import PatientAdmissionCreate from './PatientAdmissionCreate';
-import PatientAdmissionEdit from './PatientAdmissionEdit';
-import PatientAdmissionBillingHistory from './PatientAdmissionBillingHistory';
-import PatientAdmissionBillingPreview from './PatientAdmissionBillingPreview';
+import InvoiceList from './Invoice/InvoiceList';
+import InvoiceCreateNew from './Invoice/InvoiceCreateNew';
+import InvoicePageNew from './Invoice/InvoicePageNew';
+import InvoiceUpload from './Invoice/InvoiceUpload';
+import InvoiceMonitor from './Invoice/InvoiceMonitor';
+import ServiceCatalog from './components/ServiceCatalog';
+import InvoiceView from './Invoice/InvoiceView';
+import HomeCareList from './HomeCare/HomeCareList';
+import HomeCareCreate from './HomeCare/HomeCareCreate';
+import HomeCareEdit from './HomeCare/HomeCareEdit';
+import HomeCareBillingHistory from './HomeCare/HomeCareBillingHistory';
+import HomeCareBillingPreview from './HomeCare/HomeCareBillingPreview';
+import PatientAdmissionList from './PatientAdmission/PatientAdmissionList';
+import PatientAdmissionCreate from './PatientAdmission/PatientAdmissionCreate';
+import PatientAdmissionEdit from './PatientAdmission/PatientAdmissionEdit';
+import PatientAdmissionBillingHistory from './PatientAdmission/PatientAdmissionBillingHistory';
+import PatientAdmissionBillingPreview from './PatientAdmission/PatientAdmissionBillingPreview';
 import Sidebar from './Sidebar';
 import AIChat from './AIChat';
 
@@ -223,7 +223,7 @@ export default function App() {
                 <Route path="/enquiries" element={<EnquiryPage />} />
                 <Route path="/admission" element={<AdmissionRegistration generateMemberId={() => `MID-${Date.now()}-${Math.floor(Math.random() * 1000)}`} />} />
                 <Route path="/billing-summary" element={<BillingSummary />} />
-                <Route path="/analysis" element={<AnalyticsReport />} />
+                <Route path="/analysis" element={<AnalysisReport />} />
                 <Route path="/schema" element={<SchemaEditor />} />
                 <Route path="/charge-summary" element={<ChargeSummary />} />
                 <Route path="/documents" element={<Documents />} />
