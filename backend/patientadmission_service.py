@@ -48,7 +48,7 @@ def get_patientadmission_sheet():
 
 
 def get_accounts_receivable_sheet():
-    """Get CRM_Admission → Accounts Receivable for invoice storage"""
+    """Get CRM_Admission → Invoice Table for invoice storage"""
     # Try to use separate credentials for admission sheet if available
     creds_file = ADMISSION_CREDENTIALS_FILE if os.path.exists(ADMISSION_CREDENTIALS_FILE) else CREDENTIALS_FILE
     client = get_google_sheet_client(creds_file)
@@ -56,7 +56,7 @@ def get_accounts_receivable_sheet():
     if not CRM_ADMISSION_SHEET_ID:
         raise HTTPException(status_code=500, detail="CRM_Admission Sheet ID not configured")
     spreadsheet = client.open_by_key(CRM_ADMISSION_SHEET_ID)
-    worksheet = spreadsheet.worksheet("Accounts Receivable")
+    worksheet = spreadsheet.worksheet("Invoice Table")
     return worksheet
 
 
@@ -327,7 +327,7 @@ def get_patientadmission_client_by_id(patient_name: str) -> Optional[Dict[str, A
 
 def get_billing_history(patient_name: str) -> List[Dict[str, Any]]:
     """
-    Get billing history for a patient admission client from Accounts Receivable sheet.
+    Get billing history for a patient admission client from Invoice Table sheet.
     
     Args:
         patient_name: Patient name
@@ -419,7 +419,7 @@ def generate_invoice_ref() -> str:
 
 def generate_patientadmission_invoice(client_record: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Generate invoice for a patient admission client and save to Accounts Receivable sheet.
+    Generate invoice for a patient admission client and save to Invoice Table sheet.
     
     Args:
         client_record: Home care client record from CRM_PatientAdmission sheet

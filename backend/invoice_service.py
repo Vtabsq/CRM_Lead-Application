@@ -47,7 +47,7 @@ def get_crm_lead_sheet():
 
 
 def get_crm_admission_sheet():
-    """Get CRM_Admission → Accounts Receivable for invoice data"""
+    """Get CRM_Admission → Invoice Table for invoice data"""
     # Try to use separate credentials for admission sheet if available
     creds_file = ADMISSION_CREDENTIALS_FILE if os.path.exists(ADMISSION_CREDENTIALS_FILE) else CREDENTIALS_FILE
     client = get_google_sheet_client(creds_file)
@@ -55,7 +55,7 @@ def get_crm_admission_sheet():
     if not CRM_ADMISSION_SHEET_ID:
         raise HTTPException(status_code=500, detail="CRM_Admission Sheet ID not configured")
     spreadsheet = client.open_by_key(CRM_ADMISSION_SHEET_ID)
-    worksheet = spreadsheet.worksheet("Accounts Receivable")
+    worksheet = spreadsheet.worksheet("Invoice Table")
     return worksheet
 
 
@@ -257,7 +257,7 @@ def generate_invoice_ref() -> str:
 
 def create_invoice(invoice_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Create new invoice in CRM_Admission → Accounts Receivable sheet
+    Create new invoice in CRM_Admission → Invoice Table sheet
     Fetches complete patient data from CRM_Lead to maintain consistency
     """
     try:
