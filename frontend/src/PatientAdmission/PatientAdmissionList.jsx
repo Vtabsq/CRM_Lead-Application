@@ -122,7 +122,7 @@ const PatientAdmissionList = () => {
         if (loading) {
             return (
                 <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                         Loading patient admission clients...
                     </td>
                 </tr>
@@ -132,7 +132,7 @@ const PatientAdmissionList = () => {
         if (error) {
             return (
                 <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-red-600">
+                    <td colSpan="8" className="px-6 py-8 text-center text-red-600">
                         {error}
                     </td>
                 </tr>
@@ -142,7 +142,7 @@ const PatientAdmissionList = () => {
         if (filteredClients.length === 0) {
             return (
                 <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                         No clients found
                     </td>
                 </tr>
@@ -161,20 +161,23 @@ const PatientAdmissionList = () => {
                         {client.service_started_on}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {client.next_billing_date || 'Not set'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ₹{parseFloat(client.revenue || 0).toLocaleString()}
+                        {client.discharge_date || 'No Date'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {client.next_billing_date || 'Not set'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 w-32">
+                        ₹{parseFloat(client.revenue || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 w-32">
                         {client.shift}
                     </td>
-                    <td className="px-8 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 w-32">
                         <span className={`px-2 py-1 text-xs rounded-full ${client.room_type === 'Twin' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                             {client.room_type || 'Not Set'}
                         </span>
                     </td>
-                    <td className="px-8 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 w-40">
                         <button
                             onClick={() => navigate(`/patientadmission/edit/${encodeURIComponent(client.patient_name)}`)}
                             className="text-blue-600 hover:text-blue-900 mr-3"
@@ -296,11 +299,12 @@ const PatientAdmissionList = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Patient</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Admission Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Discharge Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Next Billing</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Revenue</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Occupied Days</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Room Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32">Revenue</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32">Occupied Days</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32">Room Type</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-40">Actions</th>
                                 </tr>
                             </thead>
                         </table>

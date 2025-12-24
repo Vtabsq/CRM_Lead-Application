@@ -1,89 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, UserPlus, Users, UserCheck, Calendar, AlertCircle, ChevronRight } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import axios from 'axios';
+import { Users, TrendingUp, UserPlus, UserMinus, Calendar, XCircle, CheckCircle, Building2, LogOut, AlertCircle, ChevronRight } from 'lucide-react';
 
 const Home = () => {
+    const [dashboardData, setDashboardData] = useState({
+        previousDayEnquiries: { count: 0, data: [] },
+        convertedLeads: { count: 0, data: [] },
+        admittedPatients: { count: 0, data: [] },
+        complaintsReceived: { count: 0, data: [] },
+        complaintsResolved: { count: 0, data: [] },
+        followUpsDue: { count: 0, data: [] },
+        rsPuramAdmissions: { count: 0, data: [] },
+        ramNagarAdmissions: { count: 0, data: [] },
+        chennaiAdmissions: { count: 0, data: [] },
+        rsPuramDischarges: { count: 0, data: [] },
+        ramNagarDischarges: { count: 0, data: [] },
+        chennaiDischarges: { count: 0, data: [] }
+    });
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState(null);
-    const [currentDate, setCurrentDate] = useState('');
     const [expandedSection, setExpandedSection] = useState(null);
 
-    const [dashboardData, setDashboardData] = useState({
-        previousDayEnquiries: { data: [], count: 0, date_filter: '' },
-        leadsConverted: { data: [], count: 0, date_filter: '' },
-        patientsAdmitted: { data: [], count: 0, date_filter: '' },
-        patientsDischarged: { data: [], count: 0, date_filter: '' },
-        followUpsToday: { data: [], count: 0, date_filter: '' }
-    });
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
     useEffect(() => {
-        const today = new Date();
-        const formattedDate = today.toLocaleDateString('en-IN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        setCurrentDate(formattedDate);
         fetchDashboardData();
     }, []);
 
     const fetchDashboardData = async () => {
         setLoading(true);
-        setError(null);
-
         try {
-            const endpoints = [
-                { key: 'previousDayEnquiries', url: '/api/dashboard/previous-day-enquiries' },
-                { key: 'leadsConverted', url: '/api/dashboard/leads-converted-yesterday' },
-                { key: 'patientsAdmitted', url: '/api/dashboard/patients-admitted?date_filter=yesterday' },
-                { key: 'patientsDischarged', url: '/api/dashboard/patients-discharged' },
-                { key: 'followUpsToday', url: '/api/dashboard/follow-ups-today' }
-            ];
+            const [
+                enquiries, converted, admitted, complaintsRec, complaintsRes, followUps,
+                rsPuramAdm, ramNagarAdm, chennaiAdm,
+                rsPuramDis, ramNagarDis, chennaiDis
+            ] = await Promise.all([
+                axios.get(`${API_BASE_URL}/api/dashboard/previous-day-enquiries`),
+                axios.get(`${API_BASE_URL}/api/dashboard/converted-leads-yesterday`),
+                axios.get(`${API_BASE_URL}/api/dashboard/admitted-patients-yesterday`),
+                axios.get(`${API_BASE_URL}/api/dashboard/complaints-received-yesterday`),
+                axios.get(`${API_BASE_URL}/api/dashboard/complaints-resolved-yesterday`),
+                axios.get(`${API_BASE_URL}/api/dashboard/follow-ups-due-today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=RS Puram&date_filter=today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=ram nagar&date_filter=today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=chennai&date_filter=today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=RS Puram&date_filter=today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=ram nagar&date_filter=today`),
+                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=chennai&date_filter=today`)
+            ]);
 
-            const results = await Promise.all(
-                endpoints.map(endpoint =>
-                    fetch(`${API_BASE_URL}${endpoint.url}`)
-                        .then(res => res.ok ? res.json() : { data: [], count: 0, date_filter: '' })
-                        .then(data => ({ key: endpoint.key, data }))
-                        .catch(() => ({ key: endpoint.key, data: { data: [], count: 0, date_filter: '' } }))
-                )
-            );
-
-            const newData = {};
-            results.forEach(result => {
-                newData[result.key] = result.data;
+            setDashboardData({
+                previousDayEnquiries: enquiries.data,
+                convertedLeads: converted.data,
+                admittedPatients: admitted.data,
+                complaintsReceived: complaintsRec.data,
+                complaintsResolved: complaintsRes.data,
+                followUpsDue: followUps.data,
+                rsPuramAdmissions: rsPuramAdm.data,
+                ramNagarAdmissions: ramNagarAdm.data,
+                chennaiAdmissions: chennaiAdm.data,
+                rsPuramDischarges: rsPuramDis.data,
+                ramNagarDischarges: ramNagarDis.data,
+                chennaiDischarges: chennaiDis.data
             });
-
-            setDashboardData(newData);
-        } catch (err) {
-            console.error('Error fetching dashboard data:', err);
-            setError('Failed to load dashboard data.');
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
-            setRefreshing(false);
         }
-    };
-
-    const handleRefresh = () => {
-        setRefreshing(true);
-        fetchDashboardData();
     };
 
     const handleViewDetails = (sectionKey) => {
         setExpandedSection(expandedSection === sectionKey ? null : sectionKey);
     };
 
-    const DashboardCard = ({ sectionKey, category, title, description, count, icon: Icon, color, data }) => {
+    // Dashboard Card - Matching the reference design
+    const DashboardCard = ({ sectionKey, title, count, icon: Icon, color, data, category, description }) => {
         const isExpanded = expandedSection === sectionKey;
+        const hasData = data && data.length > 0;
 
         return (
-            <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-200">
-                {/* Card Content */}
-                <div className="p-6 pb-8">
-                    {/* Category Label */}
+            <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200">
+                {/* Card Header */}
+                <div className="p-4">
+                    {/* Category and Icon */}
                     <div className="flex items-center justify-between mb-3">
                         <span className={`text-xs font-semibold uppercase tracking-wider ${color}`}>
                             {category}
@@ -94,33 +93,29 @@ const Home = () => {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                    <h3 className="text-base font-bold text-gray-800 mb-4">
                         {title}
                     </h3>
 
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {description}
-                    </p>
 
-                    {/* Count Badge */}
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="text-2xl font-bold text-gray-800">{count}</span>
+                    {/* Count */}
+                    <div className="flex items-baseline gap-2 mb-4">
+                        <span className="text-3xl font-bold text-gray-800">{count}</span>
                         <span className="text-sm text-gray-500">records</span>
                     </div>
 
-                    {/* Action Button */}
+                    {/* View Details Button */}
                     <button
                         onClick={() => handleViewDetails(sectionKey)}
-                        className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${isExpanded
-                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 border border-gray-300'
-                                : color === 'text-blue-600' ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-600'
-                                    : color === 'text-green-600' ? 'bg-green-600 text-white hover:bg-green-700 border border-green-600'
-                                        : color === 'text-purple-600' ? 'bg-purple-600 text-white hover:bg-purple-700 border border-purple-600'
-                                            : color === 'text-orange-600' ? 'bg-orange-600 text-white hover:bg-orange-700 border border-orange-600'
-                                                : color === 'text-pink-600' ? 'bg-pink-600 text-white hover:bg-pink-700 border border-pink-600'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-600'
-                            }`}
+                        className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${color === 'text-blue-600' ? 'bg-blue-600 hover:bg-blue-700' :
+                            color === 'text-green-600' ? 'bg-green-600 hover:bg-green-700' :
+                                color === 'text-purple-600' ? 'bg-purple-600 hover:bg-purple-700' :
+                                    color === 'text-red-600' ? 'bg-red-600 hover:bg-red-700' :
+                                        color === 'text-orange-600' ? 'bg-orange-600 hover:bg-orange-700' :
+                                            color === 'text-pink-600' ? 'bg-pink-600 hover:bg-pink-700' :
+                                                color === 'text-indigo-600' ? 'bg-indigo-600 hover:bg-indigo-700' :
+                                                    'bg-blue-600 hover:bg-blue-700'
+                            } text-white`}
                     >
                         {isExpanded ? 'Hide Details' : 'View Details'}
                         <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
@@ -136,7 +131,7 @@ const Home = () => {
                                     <div key={i} className="animate-pulse h-4 bg-gray-200 rounded"></div>
                                 ))}
                             </div>
-                        ) : data.length === 0 ? (
+                        ) : !hasData ? (
                             <div className="text-center py-6 text-gray-400">
                                 <AlertCircle className="w-10 h-10 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No records found</p>
@@ -184,100 +179,159 @@ const Home = () => {
         );
     };
 
+    const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="max-w-7xl mx-auto mb-8">
-                <div className="flex items-center justify-between">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+                <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">
-                            Daily Activity Dashboard
-                        </h1>
-                        <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {currentDate}
-                        </p>
+                        <h1 className="text-2xl font-bold text-gray-800">Daily Activity Dashboard</h1>
+                        <p className="text-sm text-gray-500 mt-1">📅 {currentDate}</p>
                     </div>
                     <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium ${refreshing ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
+                        onClick={fetchDashboardData}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center gap-2"
                     >
-                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                        Refresh
+                        🔄 Refresh
                     </button>
                 </div>
-
-                {error && (
-                    <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        {error}
-                    </div>
-                )}
             </div>
 
             {/* Dashboard Grid */}
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <DashboardCard
-                    sectionKey="previousDayEnquiries"
-                    category="ENQUIRIES"
-                    title="Previous Day Enquiries"
-                    description="All enquiries created yesterday. Track missed or unattended enquiries to ensure no lead is forgotten."
-                    count={dashboardData.previousDayEnquiries.count}
-                    icon={Users}
-                    color="text-blue-600"
-                    data={dashboardData.previousDayEnquiries.data}
-                />
-
-                <DashboardCard
-                    sectionKey="leadsConverted"
-                    category="CONVERSIONS"
-                    title="Leads Converted Yesterday"
-                    description="Enquiries converted to admission yesterday. Measure conversion efficiency and daily performance."
-                    count={dashboardData.leadsConverted.count}
-                    icon={TrendingUp}
-                    color="text-green-600"
-                    data={dashboardData.leadsConverted.data}
-                />
-
-                <DashboardCard
-                    sectionKey="patientsAdmitted"
-                    category="ADMISSIONS"
-                    title="Patients Admitted"
-                    description="Patients admitted into care yesterday. Confirms new revenue entries and operational workload."
-                    count={dashboardData.patientsAdmitted.count}
-                    icon={UserPlus}
-                    color="text-purple-600"
-                    data={dashboardData.patientsAdmitted.data}
-                />
-
-                <DashboardCard
-                    sectionKey="patientsDischarged"
-                    category="DISCHARGES"
-                    title="Patients Discharged"
-                    description="Patients whose service ended yesterday. Helps billing and closure verification."
-                    count={dashboardData.patientsDischarged.count}
-                    icon={UserCheck}
-                    color="text-orange-600"
-                    data={dashboardData.patientsDischarged.data}
-                />
-
-                <DashboardCard
-                    sectionKey="followUpsToday"
-                    category="FOLLOW-UPS"
-                    title="Follow-Up Due Today"
-                    description="Enquiries requiring follow-up today. Prevents missed follow-ups and improves conversion."
-                    count={dashboardData.followUpsToday.count}
-                    icon={Calendar}
-                    color="text-pink-600"
-                    data={dashboardData.followUpsToday.data}
-                />
+            <div className="flex-1 overflow-auto p-6">
+                <div className="max-w-[1600px] mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <DashboardCard
+                            sectionKey="previousDayEnquiries"
+                            title="Previous Day Enquiries"
+                            category="ENQUIRIES"
+                            description="All enquiries created yesterday. Track missed or unattended enquiries to ensure no lead is forgotten."
+                            count={dashboardData.previousDayEnquiries.count}
+                            data={dashboardData.previousDayEnquiries.data}
+                            icon={Users}
+                            color="text-blue-600"
+                        />
+                        <DashboardCard
+                            sectionKey="convertedLeads"
+                            title="Leads Converted Yesterday"
+                            category="CONVERSIONS"
+                            description="Enquiries converted to admission yesterday. Measure conversion efficiency and daily performance."
+                            count={dashboardData.convertedLeads.count}
+                            data={dashboardData.convertedLeads.data}
+                            icon={TrendingUp}
+                            color="text-green-600"
+                        />
+                        <DashboardCard
+                            sectionKey="admittedPatients"
+                            title="Patients Admitted Yesterday"
+                            category="ADMISSIONS"
+                            description="Patients admitted into care yesterday. Confirms new revenue entries and operational workload."
+                            count={dashboardData.admittedPatients.count}
+                            data={dashboardData.admittedPatients.data}
+                            icon={UserPlus}
+                            color="text-purple-600"
+                        />
+                        <DashboardCard
+                            sectionKey="complaintsReceived"
+                            title="Complaints Received Yesterday"
+                            category="COMPLAINTS"
+                            description="Complaints received yesterday. Monitor customer satisfaction and service quality issues."
+                            count={dashboardData.complaintsReceived.count}
+                            data={dashboardData.complaintsReceived.data}
+                            icon={XCircle}
+                            color="text-red-600"
+                        />
+                        <DashboardCard
+                            sectionKey="complaintsResolved"
+                            title="Complaints Resolved Yesterday"
+                            category="RESOLVED"
+                            description="Complaints resolved yesterday. Track resolution efficiency and customer service performance."
+                            count={dashboardData.complaintsResolved.count}
+                            data={dashboardData.complaintsResolved.data}
+                            icon={CheckCircle}
+                            color="text-green-600"
+                        />
+                        <DashboardCard
+                            sectionKey="followUpsDue"
+                            title="Follow-Up Due Today"
+                            category="FOLLOW-UPS"
+                            description="Enquiries requiring follow-up today. Prevents missed follow-ups and improves conversion."
+                            count={dashboardData.followUpsDue.count}
+                            data={dashboardData.followUpsDue.data}
+                            icon={Calendar}
+                            color="text-pink-600"
+                        />
+                        <DashboardCard
+                            sectionKey="rsPuramAdmissions"
+                            title="RS Puram Admission - Today"
+                            category="ADMISSIONS"
+                            description="New admissions at RS Puram center today. Monitor center-specific patient intake."
+                            count={dashboardData.rsPuramAdmissions.count}
+                            data={dashboardData.rsPuramAdmissions.data}
+                            icon={Building2}
+                            color="text-indigo-600"
+                        />
+                        <DashboardCard
+                            sectionKey="ramNagarAdmissions"
+                            title="Ram Nagar Admission - Today"
+                            category="ADMISSIONS"
+                            description="New admissions at Ram Nagar center today. Monitor center-specific patient intake."
+                            count={dashboardData.ramNagarAdmissions.count}
+                            data={dashboardData.ramNagarAdmissions.data}
+                            icon={Building2}
+                            color="text-indigo-600"
+                        />
+                        <DashboardCard
+                            sectionKey="chennaiAdmissions"
+                            title="Chennai Admission - Today"
+                            category="ADMISSIONS"
+                            description="New admissions at Chennai center today. Monitor center-specific patient intake."
+                            count={dashboardData.chennaiAdmissions.count}
+                            data={dashboardData.chennaiAdmissions.data}
+                            icon={Building2}
+                            color="text-indigo-600"
+                        />
+                        <DashboardCard
+                            sectionKey="rsPuramDischarges"
+                            title="RS Puram Discharge - Today"
+                            category="DISCHARGES"
+                            description="Patient discharges from RS Puram center today. Track center-specific service completions."
+                            count={dashboardData.rsPuramDischarges.count}
+                            data={dashboardData.rsPuramDischarges.data}
+                            icon={LogOut}
+                            color="text-orange-600"
+                        />
+                        <DashboardCard
+                            sectionKey="ramNagarDischarges"
+                            title="Ram Nagar Discharge - Today"
+                            category="DISCHARGES"
+                            description="Patient discharges from Ram Nagar center today. Track center-specific service completions."
+                            count={dashboardData.ramNagarDischarges.count}
+                            data={dashboardData.ramNagarDischarges.data}
+                            icon={LogOut}
+                            color="text-orange-600"
+                        />
+                        <DashboardCard
+                            sectionKey="chennaiDischarges"
+                            title="Chennai Discharge - Today"
+                            category="DISCHARGES"
+                            description="Patient discharges from Chennai center today. Track center-specific service completions."
+                            count={dashboardData.chennaiDischarges.count}
+                            data={dashboardData.chennaiDischarges.data}
+                            icon={LogOut}
+                            color="text-orange-600"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Footer */}
-            <div className="max-w-7xl mx-auto mt-8 text-center text-xs text-gray-500">
-                <p>Click "View Details" on any card to see records • Last updated: {new Date().toLocaleTimeString()}</p>
+            <div className="bg-white border-t border-gray-200 px-6 py-2 flex-shrink-0">
+                <div className="max-w-[1600px] mx-auto text-center text-xs text-gray-500">
+                    Click any card to see detailed records • Last updated: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </div>
             </div>
         </div>
     );

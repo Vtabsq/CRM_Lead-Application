@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from dotenv import load_dotenv
+from dashboard_cache import dashboard_cache
 
 # Load environment variables
 load_dotenv()
@@ -202,7 +203,7 @@ def get_leads_converted_yesterday() -> Dict[str, Any]:
             raise HTTPException(status_code=500, detail="Google Sheet ID not configured")
         
         spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
-        worksheet = spreadsheet.worksheet("Enquiries")
+        worksheet = spreadsheet.worksheet("Sheet1")
         
         all_values = worksheet.get_all_values()
         if not all_values or len(all_values) < 2:
@@ -271,7 +272,7 @@ def get_patients_admitted(date_filter: str = "yesterday") -> Dict[str, Any]:
                     row_dict[header] = row[idx]
             
             # Filter by check-in date
-            check_in_date = row_dict.get("Check In Date", "") or row_dict.get("Check-In Date", "")
+            check_in_date = row_dict.get("Check In Date", "") or row_dict.get("Check-In Date", "") or row_dict.get("Check in Date", "")
             if compare_dates(check_in_date, target_date):
                 results.append(transform_to_table_format(row_dict, "admission"))
         
@@ -314,7 +315,7 @@ def get_patients_discharged() -> Dict[str, Any]:
                     row_dict[header] = row[idx]
             
             # Filter by check-out date
-            check_out_date = row_dict.get("Check Out Date", "") or row_dict.get("Check-Out Date", "")
+            check_out_date = row_dict.get("Check Out Date", "") or row_dict.get("Check-Out Date", "") or row_dict.get("Check out Date", "")
             if compare_dates(check_out_date, yesterday):
                 results.append(transform_to_table_format(row_dict, "admission"))
         
@@ -379,3 +380,189 @@ def get_follow_ups_today() -> Dict[str, Any]:
     except Exception as e:
         print(f"Error fetching follow-ups: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch follow-ups: {str(e)}")
+
+
+def get_complaints_received_yesterday() -> Dict[str, Any]:
+    """Get complaints received yesterday"""
+    try:
+        client = get_google_sheet_client()
+        if not GOOGLE_SHEET_ID:
+            raise HTTPException(status_code=500, detail="Google Sheet ID not configured")
+        
+        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Sheet1")
+        
+        all_values = worksheet.get_all_values()
+        if not all_values or len(all_values) < 2:
+            return {"data": [], "count": 0, "date_filter": get_yesterday()}
+        
+        headers = all_values[0]
+        yesterday = get_yesterday()
+        
+        results = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+            
+            row_dict = {}
+            for idx, header in enumerate(headers):
+                if idx < len(row):
+                    row_dict[header] = row[idx]
+            
+            # Filter: Complaint is NOT empty AND Date = yesterday
+            complaint = row_dict.get("Complaint", "")
+            enquiry_date = row_dict.get("Date", "")
+            
+            if complaint and str(complaint).strip() and compare_dates(enquiry_date, yesterday):
+                results.append(transform_to_table_format(row_dict, "enquiry"))
+        
+        return {
+            "data": results,
+            "count": len(results),
+            "date_filter": yesterday
+        }
+    
+    except Exception as e:
+        print(f"Error fetching complaints received: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch complaints: {str(e)}")
+
+
+def get_complaints_resolved_yesterday() -> Dict[str, Any]:
+    """Get complaints resolved yesterday"""
+    try:
+        client = get_google_sheet_client()
+        if not GOOGLE_SHEET_ID:
+            raise HTTPException(status_code=500, detail="Google Sheet ID not configured")
+        
+        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Sheet1")
+        
+        all_values = worksheet.get_all_values()
+        if not all_values or len(all_values) < 2:
+            return {"data": [], "count": 0, "date_filter": get_yesterday()}
+        
+        headers = all_values[0]
+        yesterday = get_yesterday()
+        
+        results = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+            
+            row_dict = {}
+            for idx, header in enumerate(headers):
+                if idx < len(row):
+                    row_dict[header] = row[idx]
+            
+            # Filter: Complaint Status = Yes AND Complaint Resolve Date = yesterday
+            complaint_status = str(row_dict.get("Complaint Status", "")).strip().lower()
+            resolve_date = row_dict.get("Complaint Resolve Date", "")
+            
+            if complaint_status == "yes" and compare_dates(resolve_date, yesterday):
+                results.append(transform_to_table_format(row_dict, "enquiry"))
+        
+        return {
+            "data": results,
+            "count": len(results),
+            "date_filter": yesterday
+        }
+    
+    except Exception as e:
+        print(f"Error fetching resolved complaints: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch resolved complaints: {str(e)}")
+
+
+def get_admissions_by_center(care_center: str, date_filter: str = "today") -> Dict[str, Any]:
+    """Get admissions for a specific care center"""
+    try:
+        client = get_google_sheet_client()
+        if not PATIENT_ADMISSION_SHEET_ID:
+            raise HTTPException(status_code=500, detail="Patient Admission Sheet ID not configured")
+        
+        spreadsheet = client.open_by_key(PATIENT_ADMISSION_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Sheet1")
+        
+        all_values = worksheet.get_all_values()
+        target_date = get_yesterday() if date_filter == "yesterday" else get_today()
+        
+        if not all_values or len(all_values) < 2:
+            return {"data": [], "count": 0, "date_filter": target_date, "care_center": care_center}
+        
+        headers = all_values[0]
+        
+        results = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+            
+            row_dict = {}
+            for idx, header in enumerate(headers):
+                if idx < len(row):
+                    row_dict[header] = row[idx]
+            
+            # Filter by Care Center AND Check-in Date
+            center = str(row_dict.get("Care Center", "")).strip()
+            check_in_date = row_dict.get("Check In Date", "") or row_dict.get("Check-In Date", "") or row_dict.get("Check in Date", "")
+            
+            # Case-insensitive comparison for care center
+            if center.lower() == care_center.lower() and compare_dates(check_in_date, target_date):
+                results.append(transform_to_table_format(row_dict, "admission"))
+        
+        return {
+            "data": results,
+            "count": len(results),
+            "date_filter": target_date,
+            "care_center": care_center
+        }
+    
+    except Exception as e:
+        print(f"Error fetching admissions by center: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch admissions: {str(e)}")
+
+
+def get_discharges_by_center(care_center: str, date_filter: str = "today") -> Dict[str, Any]:
+    """Get discharges for a specific care center"""
+    try:
+        client = get_google_sheet_client()
+        if not PATIENT_ADMISSION_SHEET_ID:
+            raise HTTPException(status_code=500, detail="Patient Admission Sheet ID not configured")
+        
+        spreadsheet = client.open_by_key(PATIENT_ADMISSION_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Sheet1")
+        
+        all_values = worksheet.get_all_values()
+        target_date = get_yesterday() if date_filter == "yesterday" else get_today()
+        
+        if not all_values or len(all_values) < 2:
+            return {"data": [], "count": 0, "date_filter": target_date, "care_center": care_center}
+        
+        headers = all_values[0]
+        
+        results = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+            
+            row_dict = {}
+            for idx, header in enumerate(headers):
+                if idx < len(row):
+                    row_dict[header] = row[idx]
+            
+            # Filter by Care Center AND Check-out Date
+            center = str(row_dict.get("Care Center", "")).strip()
+            check_out_date = row_dict.get("Check Out Date", "") or row_dict.get("Check-Out Date", "") or row_dict.get("Check out Date", "")
+            
+            # Case-insensitive comparison for care center
+            if center.lower() == care_center.lower() and compare_dates(check_out_date, target_date):
+                results.append(transform_to_table_format(row_dict, "admission"))
+        
+        return {
+            "data": results,
+            "count": len(results),
+            "date_filter": target_date,
+            "care_center": care_center
+        }
+    
+    except Exception as e:
+        print(f"Error fetching discharges by center: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch discharges: {str(e)}")

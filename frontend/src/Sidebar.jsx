@@ -158,9 +158,9 @@ const Sidebar = () => {
                         {!isCollapsed && expandedSections['patient Admission'] && (
                             <div className="mt-2 space-y-1">
                                 <NavItem icon={UserPlus} label="Registration" path="/admission" isSubItem={true} />
-                                <NavItem icon={User} label="Clients" path="/patientadmission/clients" isSubItem={true} />
                                 <div className="my-2 border-t border-gray-100"></div>
                                 <NavItem icon={Bed} label="Bed Availability" path="/bed-availability" isSubItem={true} />
+                                <NavItem icon={User} label="Clients" path="/patientadmission/clients" isSubItem={true} />
                                 <NavItem icon={FileText} label="Billing Summary" path="/billing-summary" isSubItem={true} />
                                 <NavItem icon={TrendingUp} label="Billing Preview" path="/patientadmission/billing-preview" isSubItem={true} />
                             </div>

@@ -51,7 +51,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
     const step2Fields = getStepFields(['email_id', 'mobile_number', 'door_number', 'street', 'city', 'district', 'state', 'pin_code', 'district_other', 'state_other', 'city_other']);
     const step3Fields = getStepFields(['relational_name', 'relational_relationship', 'relational_mobile', 'relational_mobile_alternative', 'emergency_address']);
     const step4Fields = getStepFields(['patient_current_status', 'patient_medical_history', 'patient_surgery', 'patient_allergy', 'disabilities']);
-    const step5Fields = getStepFields(['room_type', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'hospital_location', 'pain_point', 'providing_services']);
+    const step5Fields = getStepFields(['room_type', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'hospital_location', 'care_center', 'pain_point', 'providing_services']);
 
     // Step 6 gets everything else
     const allStepFields = new Set([...step1Fields, ...step2Fields, ...step3Fields, ...step4Fields, ...step5Fields].map(f => f.name));
@@ -103,6 +103,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
         attender_name: '',
         caretaker_name: '',
         hospital_location: '',
+        care_center: '',
         pain_point: '',
         providing_services: '',
 
@@ -422,7 +423,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
         2: ['email_id', 'mobile_number', 'door_number', 'street', 'state', 'district', 'city', 'pin_code'],
         3: ['relational_name', 'relational_relationship', 'relational_mobile', 'emergency_address'],
         4: ['patient_current_status', 'patient_medical_history', 'patient_allergy'],
-        5: ['room_type', 'hospital_location', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'pain_point', 'providing_services', 'room_rent']
+        5: ['room_type', 'hospital_location', 'care_center', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'pain_point', 'providing_services', 'room_rent']
     };
 
     const isFieldRequired = (name) => {
@@ -514,7 +515,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
         'email_id', 'mobile_number', 'door_number', 'street', 'state', 'district', 'city', 'pin_code', 'district_other',
         'relational_name', 'relational_relationship', 'relational_mobile', 'relational_mobile_alternative', 'emergency_address',
         'patient_current_status', 'patient_medical_history', 'patient_surgery', 'patient_allergy',
-        'room_type', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'hospital_location', 'pain_point', 'providing_services',
+        'room_type', 'check_in_date', 'check_out_date', 'attender_name', 'caretaker_name', 'hospital_location', 'care_center', 'pain_point', 'providing_services',
         'member_id_key', 'date'
     ]);
 
@@ -823,6 +824,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                                         {renderDynamicField(step5Fields.find(f => f.name === 'caretaker_name') || { name: 'caretaker_name', label: 'Caretaker/Nurse Name', data_type: 'text' }, formData, index)}
                                         {renderDynamicField(step5Fields.find(f => f.name === 'hospital_location') || { name: 'hospital_location', label: 'Hospital Location', data_type: 'dropdown', options: ['Main Block', 'East Wing'] }, formData, index)}
 
+                                        {renderDynamicField(step5Fields.find(f => f.name === 'care_center') || { name: 'care_center', label: 'Care Center', data_type: 'dropdown', options: ['RS Puram', 'ram nagar', 'chennai', 'other'] }, formData, index)}
                                         {renderDynamicField(step5Fields.find(f => f.name === 'pain_point') || { name: 'pain_point', label: 'Pain Point', data_type: 'dropdown', options: ['Joints', 'Muscle', 'Nerve'] }, formData, index)}
 
                                         <div className="col-span-1 md:col-span-2">

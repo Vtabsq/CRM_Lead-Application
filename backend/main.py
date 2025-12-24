@@ -1226,10 +1226,27 @@ ADMISSION_CANONICAL_MAP = {
     "hospitallocation": "hospitallocation",
     "location": "hospitallocation",
     
+    # Care Center
+    "care_center": "carecenter",
+    "carecenter": "carecenter",
+    "center": "carecenter",
+    
     # Dates
     "date": "date",
     "admissiondate": "date",
 }
+
+# Display names for Google Sheets columns (canonical_key -> Display Name)
+ADMISSION_DISPLAY_NAMES = {
+    "carecenter": "Care Center",
+    "hospitallocation": "Hospital Location",
+    "memberidkey": "Member ID Key",
+    "attendername": "Attender Name",
+    "patientname": "Patient Name",
+    "mobilenumber": "Mobile Number",
+    "relationalmobile": "Relational Mobile",
+}
+
 
 def get_canonical_key(key: str) -> str:
     """
@@ -1316,16 +1333,19 @@ def save_patient_admission_to_sheet(data: Dict[str, Any]) -> Dict[str, Any]:
              
         if c_key not in covered_canonical_keys:
             # We need to add a column. 
-            # Use a prettified version of the key? or just the key from original payload?
-            # We don't have original key easily mapped back here unless we stored it.
-            # But we can just use the canonical key or try to find original.
-            # Let's use the first original key that mapped to this canonical key.
-            # Reverse lookup for display:
+            # Priority: 1) ADMISSION_DISPLAY_NAMES, 2) Original key from payload, 3) Canonical key
             original_display = c_key
-            for k in data.keys():
-                if get_canonical_key(k) == c_key:
-                    original_display = k
-                    break
+            
+            # First, check if we have a predefined display name
+            if c_key in ADMISSION_DISPLAY_NAMES:
+                original_display = ADMISSION_DISPLAY_NAMES[c_key]
+            else:
+                # Otherwise, use the first original key that mapped to this canonical key
+                for k in data.keys():
+                    if get_canonical_key(k) == c_key:
+                        original_display = k
+                        break
+            
             new_headers.append(original_display)
             covered_canonical_keys.add(c_key) # mark processed
 
