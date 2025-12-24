@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { User, XCircle, Loader2 } from 'lucide-react';
+import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } from 'lucide-react';
 
 // Components
 import Sidebar from './Sidebar';
@@ -47,6 +47,18 @@ import PatientAdmissionEdit from './PatientAdmission/PatientAdmissionEdit';
 
 // Import API configuration
 import API_BASE_URL from './config';
+
+const LOGIN_STATS = [
+  { label: 'Monthly Admissions Processed', value: '1.2K+' },
+  { label: 'Decision Center Uptime', value: '99.9%' },
+  { label: 'Avg. Response Velocity', value: '2.3s' }
+];
+
+const LOGIN_FEATURES = [
+  'Unified admissions + home care workspace',
+  'Role-aware governance & change tracking',
+  'Instant sync with Google Sheets data lake'
+];
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -109,61 +121,144 @@ function App() {
   // Render Login Screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full border-t-8 border-green-400">
-          <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-br from-blue-100 to-green-100 p-4 rounded-full shadow-md">
-              <User className="w-12 h-12 text-blue-600" />
+      <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+        <div className="login-aurora" />
+        <div className="login-aurora delay-150" />
+        <div className="login-grid" />
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-10 px-6 py-12 lg:flex-row lg:items-stretch">
+          <div className="w-full max-w-3xl space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-emerald-200">
+              <ShieldCheck className="h-4 w-4" />
+              Trusted Healthcare CRM Suite
+            </div>
+            <div className="space-y-6">
+              <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
+                Intelligent lead orchestration for <span className="text-emerald-300">home care&nbsp;&amp; admissions.</span>
+              </h1>
+              <p className="text-lg text-white/80 md:text-xl">
+                Elevate every conversation with real-time visibility, AI-assisted forecasts, and dependable governance—all wrapped in a secure corporate workspace.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {LOGIN_STATS.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-5 shadow-lg shadow-black/20 backdrop-blur"
+                >
+                  <p className="text-3xl font-semibold text-white">{stat.value}</p>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-white/70">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+              <div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-white/60">
+                <Activity className="h-4 w-4 text-emerald-300" />
+                Platform Intelligence Layer
+              </div>
+              <ul className="space-y-3 text-sm text-white/85">
+                {LOGIN_FEATURES.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <span className="rounded-full bg-emerald-500/20 p-1.5 text-emerald-200">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-800 text-center mb-2">Welcome Back</h2>
-          <p className="text-gray-500 text-center mb-8">Sign in to access CRM Dashboard</p>
 
-          {loginError && (
-            <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 flex items-center">
-              <XCircle className="w-5 h-5 mr-2" />
-              {loginError}
-            </div>
-          )}
+          <div className="w-full max-w-md">
+            <div className="rounded-[32px] border border-white/60 bg-white/95 shadow-2xl shadow-emerald-900/40 backdrop-blur-xl">
+              <div className="border-b border-slate-100 px-8 py-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">
+                  Login
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-900">CRM Control Center</h3>
+                <p className="mt-3 flex items-center gap-2 text-sm font-medium text-emerald-600">
+                  <Lock className="h-4 w-4" />
+                  Encrypted sessions with adaptive security
+                </p>
+              </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
-              <input
-                type="text"
-                value={loginUser}
-                onChange={(e) => setLoginUser(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                placeholder="Enter your username"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white font-bold py-3 rounded-lg hover:from-blue-700 hover:to-green-700 transition-all shadow-lg transform hover:-translate-y-0.5"
-            >
-              {loginLoading ? (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                  Signing In...
+              <div className="px-8 py-8">
+                {loginError && (
+                  <div className="mb-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm font-medium text-red-800">
+                    <XCircle className="h-5 w-5" />
+                    {loginError}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Username</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={loginUser}
+                        onChange={(e) => setLoginUser(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-12 text-slate-900 shadow-inner placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        placeholder="Enter your corporate ID"
+                        required
+                        autoComplete="username"
+                      />
+                      <User className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Password</label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        value={loginPass}
+                        onChange={(e) => setLoginPass(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-12 text-slate-900 shadow-inner placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        placeholder="••••••••"
+                        required
+                        autoComplete="current-password"
+                      />
+                      <Lock className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      ISO 27001 compliant workspace
+                    </div>
+                    <a href="mailto:support@grandworld.com" className="text-emerald-600 hover:text-emerald-500">
+                      Contact Support
+                    </a>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-emerald-500 to-green-500 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:shadow-2xl disabled:opacity-70"
+                  >
+                    <span className="relative z-10">
+                      {loginLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Securing Session...
+                        </span>
+                      ) : (
+                        'Launch Workspace'
+                      )}
+                    </span>
+                    <span className="absolute inset-0 bg-white/10 opacity-0 transition group-hover:opacity-100" />
+                  </button>
+                </form>
+
+                <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs text-slate-500">
+                  By signing in you agree to the Grand World Security Policy and CRM Usage Guidelines.
                 </div>
-              ) : (
-                'Login'
-              )}
-            </button>
-          </form>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
