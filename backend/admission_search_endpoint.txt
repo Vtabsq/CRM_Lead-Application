@@ -1,0 +1,90 @@
+# ADD THIS CODE TO main.py AFTER LINE 2285 (after the search_patients function ends)
+
+@app.get("/api/admission-patients/search")
+async def search_admission_patients(q: str = ""):
+    """
+    Search patients from crm_admission -> Sheet1
+    Returns Member ID Key and Patient Name for dropdown selection in Patient Admission
+    """
+    try:
+        # Connect to crm_admission Google Sheet (using existing imports in main.py)
+        client = get_google_sheet_client("CRM-admission.json")
+        
+        # Open the sheet
+        spreadsheet = client.open_by_key(PATIENT_ADMISSION_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Sheet1")  # Use Sheet1 from crm_admission
+        
+        # Get all values
+        all_values = worksheet.get_all_values()
+        
+        if not all_values or len(all_values) < 2:
+            return {
+                "status": "success",
+                "patients": []
+            }
+        
+        headers = all_values[0]
+        
+        # Build records
+        records = []
+        for row in all_values[1:]:
+            if len(row) < len(headers):
+                row.extend([''] * (len(headers) - len(row)))
+            record = dict(zip(headers, row))
+            records.append(record)
+        
+        # Search through records
+        results = []
+        query_lower = q.strip().lower()
+        
+        for record in records:
+            # Try to find Member ID and Patient Name
+            member_id = ""
+            patient_name = ""
+            
+            # Find Member ID
+            for key in record.keys():
+                if 'member' in key.lower() and 'id' in key.lower():
+                    member_id = str(record[key]).strip()
+                    break
+            
+            # Find Patient Name
+            for key in record.keys():
+                if 'patient' in key.lower() and 'name' in key.lower():
+                    patient_name = str(record[key]).strip()
+                    break
+            
+            # Skip if both are empty
+            if not patient_name and not member_id:
+                continue
+            
+            # If query is empty, return all
+            if not query_lower:
+                results.append({
+                    "member_id": member_id,
+                    "patient_name": patient_name,
+                    "display": f"{member_id} - {patient_name}" if member_id else patient_name
+                })
+            # If query matches, add to results
+            elif query_lower in patient_name.lower() or query_lower in member_id.lower():
+                results.append({
+                    "member_id": member_id,
+                    "patient_name": patient_name,
+                    "display": f"{member_id} - {patient_name}" if member_id else patient_name
+                })
+        
+        # Limit to 50 results
+        results = results[:50]
+        
+        print(f"[Admission Patient Search] Returning {len(results)} results for query: '{q}'")
+        
+        return {
+            "status": "success",
+            "patients": results
+        }
+        
+    except Exception as e:
+        print(f"[Admission Patient Search] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to search admission patients: {str(e)}")

@@ -1,0 +1,18 @@
+# IMPORTANT: Add this to your .env file
+
+# Your CRM_Admission Sheet ID (extracted from the link you provided)
+PATIENT_ADMISSION_SHEET_ID=13NOTcuCrFDrTVbow0GsWobcX84oGmAkjepOLCDRZKzw
+
+# Instructions:
+# 1. Open your backend .env file at:
+#    c:\Users\ragul\Downloads\CRM final pdf gen and analysis(invoice)\CRM-Projects final AICRM\CRM-Projects\backend\.env
+#
+# 2. Add the line above to the file
+#
+# 3. Save the file
+#
+# 4. The backend should auto-reload, or restart it with:
+#    python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+#
+# 5. Run the setup script to create "Accounts Receivable" sheet:
+#    python setup_accounts_receivable_sheet.py

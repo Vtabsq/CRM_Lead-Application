@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Loader2, DollarSign } from 'lucide-react';
+import { Save, Loader2, IndianRupee } from 'lucide-react';
 import API_BASE_URL from './config';
 
 const ChargeSummary = () => {
@@ -45,7 +45,7 @@ const ChargeSummary = () => {
     return (
         <div className="w-full p-4 bg-white  shadow-lg border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                <DollarSign className="mr-2 text-blue-600" />
+                <IndianRupee className="mr-2 text-blue-600" />
                 Fixed Rate Settings
             </h2>
 

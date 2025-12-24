@@ -35,6 +35,71 @@ from dropdown_helpers import (
     sync_schema_to_dropdown_sheet
 )
 
+# Import invoice routes
+try:
+    from invoice_routes import router as invoice_router
+    INVOICE_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Invoice module not available: {e}")
+    INVOICE_MODULE_AVAILABLE = False
+
+# Import catalog routes
+try:
+    from catalog_routes import router as catalog_router
+    CATALOG_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Catalog module not available: {e}")
+    CATALOG_MODULE_AVAILABLE = False
+
+# Import dashboard routes
+try:
+    from dashboard_routes import router as dashboard_router
+    DASHBOARD_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Dashboard module not available: {e}")
+    DASHBOARD_MODULE_AVAILABLE = False
+
+# Import dropdown routes
+try:
+    from dropdown_routes import router as dropdown_router
+    DROPDOWN_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Dropdown module not available: {e}")
+    DROPDOWN_MODULE_AVAILABLE = False
+
+# Import home care routes
+try:
+    from homecare_routes import router as homecare_router
+    HOMECARE_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Home Care module not available: {e}")
+    HOMECARE_MODULE_AVAILABLE = False
+
+# Import home care scheduler
+try:
+    from homecare_scheduler import start_billing_scheduler, stop_billing_scheduler
+    HOMECARE_SCHEDULER_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Home Care scheduler not available: {e}")
+    HOMECARE_SCHEDULER_AVAILABLE = False
+
+# Import patient admission routes
+try:
+    from patientadmission_routes import router as patientadmission_router
+    PATIENTADMISSION_MODULE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Patient Admission module not available: {e}")
+    PATIENTADMISSION_MODULE_AVAILABLE = False
+
+# Import patient admission scheduler
+try:
+    from patientadmission_scheduler import start_billing_scheduler as start_pa_billing_scheduler, stop_billing_scheduler as stop_pa_billing_scheduler
+    PATIENTADMISSION_SCHEDULER_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Patient Admission scheduler not available: {e}")
+    PATIENTADMISSION_SCHEDULER_AVAILABLE = False
+
+
 # Load environment variables from .env file
 # Trigger reload for schema update
 load_dotenv()
@@ -82,6 +147,49 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include invoice router
+if INVOICE_MODULE_AVAILABLE:
+    app.include_router(invoice_router, prefix="/api", tags=["invoices"])
+    print("[Invoice Module] Loaded successfully")
+else:
+    print("[Invoice Module] Not loaded - module unavailable")
+
+# Include catalog router
+if CATALOG_MODULE_AVAILABLE:
+    app.include_router(catalog_router)
+    print("[Catalog Module] Loaded successfully")
+else:
+    print("[Catalog Module] Not loaded - module unavailable")
+
+# Include dashboard router
+if DASHBOARD_MODULE_AVAILABLE:
+    app.include_router(dashboard_router)
+    print("[Dashboard Module] Loaded successfully")
+else:
+    print("[Dashboard Module] Not loaded - module unavailable")
+
+# Include dropdown router
+if DROPDOWN_MODULE_AVAILABLE:
+    app.include_router(dropdown_router)
+    print("[Dropdown Module] Loaded successfully")
+else:
+    print("[Dropdown Module] Not loaded - module unavailable")
+
+# Include home care router
+if HOMECARE_MODULE_AVAILABLE:
+    app.include_router(homecare_router, prefix="/api", tags=["homecare"])
+    print("[Home Care Module] Loaded successfully")
+else:
+    print("[Home Care Module] Not loaded - module unavailable")
+
+# Include patient admission router
+if PATIENTADMISSION_MODULE_AVAILABLE:
+    app.include_router(patientadmission_router, prefix="/api", tags=["patientadmission"])
+    print("[Patient Admission Module] Loaded successfully")
+else:
+    print("[Patient Admission Module] Not loaded - module unavailable")
+
 
 # Configuration  
 EXCEL_FILE_PATH = os.getenv("EXCEL_FILE_PATH", "Lead CRM ApplicationData.xlsx")
@@ -1035,27 +1143,51 @@ def upsert_to_sheet(sheet_name: str, data: Dict[str, Any], schema_type: str = "e
     }
 
 
-# --- NEW: Secondary Google Sheet Helpers ---
+# --- UPDATED: Support Two Separate Google Sheets ---
 
 def get_patient_admission_sheet_client():
-    """Helper to get authenticated client for the SECONDARY Patient Admission sheet."""
-    if not os.path.exists(PATIENT_ADMISSION_CREDENTIALS_FILE):
-        raise FileNotFoundError(f"Secondary credentials file not found: {PATIENT_ADMISSION_CREDENTIALS_FILE}")
+    """
+    Helper to get authenticated client for Patient Admission sheet.
+    UPDATED: Supports BOTH architectures:
+    - If CRM-admission.json exists: Use separate sheet (PATIENT_ADMISSION_SHEET_ID)
+    - If not: Fall back to same sheet with different worksheet
+    """
+    # Try to use separate credentials first
+    credentials_file = CREDENTIALS_FILE
+    if os.path.exists(PATIENT_ADMISSION_CREDENTIALS_FILE):
+        credentials_file = PATIENT_ADMISSION_CREDENTIALS_FILE
+        print(f"[Admission] Using separate credentials: {PATIENT_ADMISSION_CREDENTIALS_FILE}")
+    else:
+        print(f"[Admission] Using shared credentials: {CREDENTIALS_FILE}")
+    
+    if not os.path.exists(credentials_file):
+        raise FileNotFoundError(f"Credentials file not found: {credentials_file}")
     
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = Credentials.from_service_account_file(PATIENT_ADMISSION_CREDENTIALS_FILE, scopes=scope)
+    creds = Credentials.from_service_account_file(credentials_file, scopes=scope)
     client = gspread.authorize(creds)
     
-    # Open Sheet
+    # Determine which sheet to open
     spreadsheet = None
-    if PATIENT_ADMISSION_SHEET_ID:
+    
+    # If using separate credentials, try to open separate sheet
+    if credentials_file == PATIENT_ADMISSION_CREDENTIALS_FILE and PATIENT_ADMISSION_SHEET_ID:
+        print(f"[Admission] Opening separate sheet: {PATIENT_ADMISSION_SHEET_ID}")
         spreadsheet = client.open_by_key(PATIENT_ADMISSION_SHEET_ID)
+    elif PATIENT_ADMISSION_SHEET_ID:
+        # Separate sheet ID provided but using shared credentials
+        print(f"[Admission] Opening separate sheet with shared credentials: {PATIENT_ADMISSION_SHEET_ID}")
+        spreadsheet = client.open_by_key(PATIENT_ADMISSION_SHEET_ID)
+    elif GOOGLE_SHEET_ID:
+        # Fall back to same sheet as CRM Lead
+        print(f"[Admission] Using same sheet as CRM Lead: {GOOGLE_SHEET_ID}")
+        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
     else:
-        # Fallback Name logic
+        # Last resort: open by name
         try:
-            spreadsheet = client.open("Patient Admission Data")
+            spreadsheet = client.open(GOOGLE_SHEET_NAME)
         except gspread.SpreadsheetNotFound:
-            spreadsheet = client.create("Patient Admission Data")
+            spreadsheet = client.create(GOOGLE_SHEET_NAME)
             
     return client, spreadsheet
 
@@ -1116,7 +1248,10 @@ def get_canonical_key(key: str) -> str:
 
 def save_patient_admission_to_sheet(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Save mapped data to the SECONDARY Patient Admission Google Sheet.
+    Save mapped data to the Patient Admission sheet/worksheet.
+    UPDATED: Handles both architectures:
+    - Separate sheet: Saves to "Sheet1" in the admission sheet
+    - Same sheet: Saves to "Patient Admission" worksheet
     Logic:
     1. Normalize Input Data Keys -> Canonical Keys.
     2. Read Sheet Headers and map to Canonical Keys.
@@ -1137,7 +1272,16 @@ def save_patient_admission_to_sheet(data: Dict[str, Any]) -> Dict[str, Any]:
     print(f"[Patient Admission] Normalized Data: {canonical_data.keys()}")
 
     client, spreadsheet = get_patient_admission_sheet_client()
-    sheet_name = "Sheet1"
+    
+    # Determine worksheet name based on whether we're using separate sheet or same sheet
+    # If PATIENT_ADMISSION_SHEET_ID is set, we're using a separate sheet -> use "Sheet1"
+    # Otherwise, we're using same sheet -> use "Patient Admission" worksheet
+    if PATIENT_ADMISSION_SHEET_ID:
+        sheet_name = "Sheet1"  # Separate sheet uses Sheet1
+        print(f"[Patient Admission] Using separate sheet, worksheet: {sheet_name}")
+    else:
+        sheet_name = "Patient Admission"  # Same sheet uses dedicated worksheet
+        print(f"[Patient Admission] Using same sheet, worksheet: {sheet_name}")
     
     sheet = None
     try:
@@ -1524,6 +1668,23 @@ async def startup_event():
         smtp_user_set = "YES" if SMTP_USERNAME else "NO"
         smtp_pass_set = "YES" if SMTP_PASSWORD else "NO"
         print(f"[SMTP Config] Username set: {smtp_user_set}, Password set: {smtp_pass_set}")
+        
+        # Start Home Care billing scheduler
+        if HOMECARE_SCHEDULER_AVAILABLE:
+            try:
+                start_billing_scheduler()
+                print("[Home Care Scheduler] Started successfully")
+            except Exception as e:
+                print(f"[Home Care Scheduler] Failed to start: {e}")
+        
+        # Start Patient Admission billing scheduler
+        if PATIENTADMISSION_SCHEDULER_AVAILABLE:
+            try:
+                start_pa_billing_scheduler()
+                print("[Patient Admission Scheduler] Started successfully")
+            except Exception as e:
+                print(f"[Patient Admission Scheduler] Failed to start: {e}")
+        
     except Exception as e:
         print(f"Warning: Could not load fields on startup: {str(e)}")
         print("Ensure CSV or Excel file is present in backend directory")
@@ -1926,9 +2087,217 @@ async def download_template(format: str = "xlsx"):
             return response
 
     except Exception as e:
-        print(f"Download template failed: {e}")
-        # Return error as text if failed
-        return Response(content=f"Error generating template: {str(e)}", status_code=500)
+            print(f"Download template failed: {e}")
+            # Return error as text if failed
+            return Response(content=f"Error generating template: {str(e)}", status_code=500)
+
+
+# Patient search cache to prevent API rate limits
+from datetime import datetime, timedelta
+patient_search_cache = {
+    "data": None,
+    "timestamp": None,
+    "ttl_minutes": 5  # Cache for 5 minutes
+}
+
+def get_cached_patients():
+    """Get patients from cache if available and not expired"""
+    global patient_search_cache
+    
+    if patient_search_cache["data"] is None:
+        return None
+    
+    if patient_search_cache["timestamp"] is None:
+        return None
+    
+    # Check if cache is expired
+    cache_age = datetime.now() - patient_search_cache["timestamp"]
+    if cache_age > timedelta(minutes=patient_search_cache["ttl_minutes"]):
+        print("[Patient Search] Cache expired, will refresh")
+        return None
+    
+    print(f"[Patient Search] Using cached data (age: {cache_age.seconds}s)")
+    return patient_search_cache["data"]
+
+def update_patient_cache(data):
+    """Update the patient search cache"""
+    global patient_search_cache
+    patient_search_cache["data"] = data
+    patient_search_cache["timestamp"] = datetime.now()
+    print(f"[Patient Search] Cache updated with {len(data)} records")
+
+
+@app.get("/api/patients/search")
+async def search_patients(q: str = ""):
+    """
+    Search patients from CRM_Lead->Sheet1
+    Returns Member ID Key and Patient Name for dropdown selection
+    If query is empty, returns all patients (for dropdown population)
+    """
+    try:
+        # Force reload - Updated to return all patients when query is empty
+        # Try to get from cache first
+        all_records = get_cached_patients()
+        
+        # If cache miss, fetch from Google Sheets
+        if all_records is None:
+            print("[Patient Search] Cache miss, fetching from Google Sheets")
+            # Connect to Google Sheets
+            scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+            creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scope)
+            client = gspread.authorize(creds)
+            
+            if not GOOGLE_SHEET_ID:
+                raise HTTPException(status_code=500, detail="Google Sheet ID not configured")
+            
+            spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+            sheet = spreadsheet.worksheet("Sheet1")
+            
+            # Get all records
+            all_records = sheet.get_all_records()
+            
+            # Update cache
+            update_patient_cache(all_records)
+        
+        # Debug: Print available columns from first record
+        if all_records:
+            print(f"[Patient Search DEBUG] Total records: {len(all_records)}")
+            print(f"[Patient Search DEBUG] Available columns: {list(all_records[0].keys())}")
+            
+            # Print first record completely to see the data structure
+            if len(all_records) > 0:
+                first_record = all_records[0]
+                print(f"[Patient Search DEBUG] First record data:")
+                for key, value in first_record.items():
+                    if 'member' in key.lower() or 'patient' in key.lower() or 'name' in key.lower():
+                        print(f"  - {key}: '{value}'")
+        
+        results = []
+        
+        # If query is empty, return all patients (limit to 100 for performance)
+        if not q or len(q.strip()) < 1:
+            print("[Patient Search] Empty query - returning all patients")
+            for record in all_records[:100]:  # Limit to first 100 patients
+                # Get patient name
+                patient_name = str(record.get("Patient Name", "") or record.get("patient name", "")).strip()
+                
+                # Get Member ID Key
+                member_id = ""
+                for key in record.keys():
+                    key_lower = str(key).lower().strip()
+                    if "member" in key_lower and "id" in key_lower:
+                        value = record.get(key, "")
+                        if value and value is not None and str(value).strip() and str(value).strip().lower() != 'none':
+                            member_id = str(value).strip()
+                            break
+                
+                # Skip if both are empty
+                if not patient_name and not member_id:
+                    continue
+                
+                # Get additional fields for auto-population
+                gender = str(record.get("GENDER", "") or record.get("Gender", "") or record.get("gender", "")).strip()
+                age = str(record.get("AGE", "") or record.get("Age", "") or record.get("age", "")).strip()
+                location = str(record.get("LOCATION", "") or record.get("Location", "") or record.get("location", "")).strip()
+                
+                results.append({
+                    "member_id": member_id,
+                    "patient_name": patient_name,
+                    "gender": gender,
+                    "age": age,
+                    "location": location,
+                    "display": f"{member_id} | {patient_name}" if member_id and patient_name else (member_id or patient_name)
+                })
+            
+            print(f"[Patient Search DEBUG] Returning {len(results)} total patients")
+            return {
+                "status": "success",
+                "patients": results
+            }
+        
+        # If query is provided, search for matches
+        query_lower = q.strip().lower()
+        
+        # Debug: Show what column names we're actually seeing
+        if all_records:
+            actual_columns = list(all_records[0].keys())
+            member_id_columns = [col for col in actual_columns if 'member' in col.lower() and 'id' in col.lower()]
+            print(f"[Patient Search DEBUG] Columns with 'member' and 'id': {member_id_columns}")
+        
+        for record in all_records:
+            # Get patient name with various possible column name variations
+            patient_name = str(record.get("Patient Name", "") or record.get("patient name", "")).strip()
+            
+            # Get Member ID Key - FIRST check the exact column names from the sheet
+            member_id = ""
+            
+            # Strategy 1: Check all actual column names in the record
+            for key in record.keys():
+                key_lower = str(key).lower().strip()
+                # Check if this column name contains both "member" and "id"
+                if "member" in key_lower and "id" in key_lower:
+                    value = record.get(key, "")
+                    # Handle None, empty strings, and the string "None"
+                    if value and value is not None and str(value).strip() and str(value).strip().lower() != 'none':
+                        member_id = str(value).strip()
+                        if len(results) < 3:  # Debug first few
+                            print(f"[Patient Search DEBUG] Found Member ID in column '{key}' = '{member_id}'")
+                        break
+            
+            # Strategy 2: Fallback to exact string matches if Strategy 1 didn't work
+            if not member_id:
+                for key_variant in [
+                    "Member ID Key", "Member ID key", "member id key", 
+                    "Member Id Key", "MEMBER ID KEY",
+                    "Member_ID_Key", "member_id_key", "MemberIDKey", "Memberidkey",
+                    "Member ID", "member id", "MemberID", "memberid",
+                    "ID", "id"
+                ]:
+                    if key_variant in record and record[key_variant]:
+                        member_id = str(record[key_variant]).strip()
+                        break
+            
+            # Debug: Print what we found for first few matches
+            if len(results) < 3 and (query_lower in patient_name.lower() or query_lower in member_id.lower()):
+                print(f"[Patient Search DEBUG] Found match - Name: '{patient_name}', ID: '{member_id}'")
+            
+            # Skip if both are empty
+            if not patient_name and not member_id:
+                continue
+            
+            # Search in both patient name and member ID
+            if (query_lower in patient_name.lower() or 
+                query_lower in member_id.lower()):
+                
+                # Get additional fields for auto-population
+                gender = str(record.get("GENDER", "") or record.get("Gender", "") or record.get("gender", "")).strip()
+                age = str(record.get("AGE", "") or record.get("Age", "") or record.get("age", "")).strip()
+                location = str(record.get("LOCATION", "") or record.get("Location", "") or record.get("location", "")).strip()
+                
+                results.append({
+                    "member_id": member_id,
+                    "patient_name": patient_name,
+                    "gender": gender,
+                    "age": age,
+                    "location": location,
+                    "display": f"{member_id} | {patient_name}" if member_id and patient_name else (member_id or patient_name)
+                })
+        
+        # Limit to 50 results
+        results = results[:50]
+        
+        print(f"[Patient Search DEBUG] Returning {len(results)} results")
+        
+        return {
+            "status": "success",
+            "patients": results
+        }
+        
+    except Exception as e:
+        print(f"Error searching patients: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to search patients: {str(e)}")
 
 
 class DeletePreviewRequest(BaseModel):
@@ -2208,9 +2577,12 @@ class BillingInputs(BaseModel):
     room_charge: float
     bed_charge: float
     nurse_payment: float
+    additional_nurse_payment: float = 0
+    other_charges_amenities: float = 0
     hospital_payment: float
     doctor_fee: float
     service_charge: float
+    discount: float = 0
 
 class BillingExportRequest(BaseModel):
     member_id: str
@@ -2257,10 +2629,13 @@ async def save_billing_summary(payload: BillingSaveRequest):
             "TotalDaysStayed",
             "RoomChargeTotal",
             "BedChargeTotal", 
-            "NursePaymentTotal", 
+            "NursePaymentTotal",
+            "AdditionalNursePaymentTotal",
+            "OtherChargesTotal",
             "HospitalPaymentTotal", 
             "DoctorFee", 
-            "ServiceCharge", 
+            "ServiceCharge",
+            "Discount",
             "BillGrandTotal", 
             "BillGeneratedDate"
         ]
@@ -2338,9 +2713,12 @@ async def save_billing_summary(payload: BillingSaveRequest):
             "RoomChargeTotal": b_data.room_charge * days,
             "BedChargeTotal": b_data.bed_charge * days,
             "NursePaymentTotal": b_data.nurse_payment * days,
+            "AdditionalNursePaymentTotal": b_data.additional_nurse_payment * days,
+            "OtherChargesTotal": b_data.other_charges_amenities * days,
             "HospitalPaymentTotal": b_data.hospital_payment * days,
             "DoctorFee": b_data.doctor_fee,
             "ServiceCharge": b_data.service_charge,
+            "Discount": b_data.discount,
             "BillGrandTotal": payload.grand_total,
             "BillGeneratedDate": current_date
         }
@@ -2494,9 +2872,12 @@ async def export_billing_summary(payload: BillingExportRequest):
                 ["Room Charge", b_inputs.room_charge],
                 ["Bed Charge", b_inputs.bed_charge],
                 ["Nurse Payment", b_inputs.nurse_payment],
+                ["Additional Nurse Payment", b_inputs.additional_nurse_payment],
+                ["Other Charges (Amenities)", b_inputs.other_charges_amenities],
                 ["Hospital Payment", b_inputs.hospital_payment],
                 ["Doctor Fee", b_inputs.doctor_fee],
                 ["Service Charge", b_inputs.service_charge],
+                ["Discount", b_inputs.discount],
                 ["TOTAL AMOUNT", payload.total_amount]
             ]
             
@@ -2612,25 +2993,23 @@ def search_data(payload: dict = Body(...)):
         sheet = None
         error_log = []
         
-        # Try requested name first
-        try:
-            sheet = client.open("CRM_Leads").worksheet("Sheet1")
-        except Exception as e:
-            error_log.append(f"CRM_Leads: {str(e)}")
-            
-        # Fallback to 'Lead CRM'
-        if not sheet:
-            try:
-                sheet = client.open("Lead CRM").worksheet("Sheet1")
-            except Exception as e:
-                error_log.append(f"Lead CRM: {str(e)}")
-                
-        # Fallback to key if available
-        if not sheet and GOOGLE_SHEET_ID:
+        # PRIORITY 1: Try configured sheet ID first (most reliable)
+        if GOOGLE_SHEET_ID:
             try:
                 sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet("Sheet1")
+                print(f"[Search] Opened sheet by ID: {GOOGLE_SHEET_ID}")
             except Exception as e:
                 error_log.append(f"ByID({GOOGLE_SHEET_ID}): {str(e)}")
+        
+        # PRIORITY 2: Try common sheet names
+        if not sheet:
+            for sheet_name in ["CRM Leads", "CRM_Leads", "Lead CRM"]:
+                try:
+                    sheet = client.open(sheet_name).worksheet("Sheet1")
+                    print(f"[Search] Opened sheet by name: {sheet_name}")
+                    break
+                except Exception as e:
+                    error_log.append(f"{sheet_name}: {str(e)}")
 
         if not sheet:
              # Final attempt: try list all spreadsheets to see what's available (debugging)
@@ -3085,20 +3464,29 @@ async def save_patient_admission(payload: Dict[str, Any] = Body(...)):
 @app.get("/patient-admission/view")
 async def view_patient_admissions():
     """
-    Retrieve all rows from the secondary Patient Admission sheet.
+    Retrieve all rows from the Patient Admission sheet/worksheet.
     Returns JSON structure with status, total count, and data list.
     """
     try:
         client, spreadsheet = get_patient_admission_sheet_client()
-        # Use default sheet or specific name logic from save function
-        sheet_name = "Sheet1"
+        
+        # Use same logic as save function to determine worksheet name
+        if PATIENT_ADMISSION_SHEET_ID:
+            sheet_name = "Sheet1"  # Separate sheet uses Sheet1
+        else:
+            sheet_name = "Patient Admission"  # Same sheet uses dedicated worksheet
+            
+        print(f"[View Admissions] Attempting to read from worksheet: {sheet_name}")
+        
         try:
             sheet = spreadsheet.worksheet(sheet_name)
         except gspread.WorksheetNotFound:
+            print(f"[View Admissions] Worksheet '{sheet_name}' not found, returning empty")
             return {"status": "success", "total": 0, "data": []}
             
         # Get all records
         records = sheet.get_all_records()
+        print(f"[View Admissions] Found {len(records)} records")
         
         return {
             "status": "success", 
@@ -5422,16 +5810,25 @@ async def generate_discharge_summary(payload: dict):
         room_rate = billing_data.get("room_charge", 0)
         bed_rate = billing_data.get("bed_charge", 0)
         nurse_rate = billing_data.get("nurse_payment", 0)
+        additional_nurse_rate = billing_data.get("additional_nurse_payment", 0)
+        other_charges_rate = billing_data.get("other_charges_amenities", 0)
         hospital_rate = billing_data.get("hospital_payment", 0)
 
         y = draw_table_row(y, "Room Charge", room_rate, days, totals.get("room", 0), alt_bg=True)
         y = draw_table_row(y, "Bed Charge", bed_rate, days, totals.get("bed", 0), alt_bg=False)
         y = draw_table_row(y, "Nursing Fee", nurse_rate, days, totals.get("nurse", 0), alt_bg=True)
+        y = draw_table_row(y, "Additional Nursing Fee", additional_nurse_rate, days, totals.get("additional_nurse", 0), alt_bg=False)
+        y = draw_table_row(y, "Other Charges (Amenities)", other_charges_rate, days, totals.get("other_charges", 0), alt_bg=True)
         y = draw_table_row(y, "Hospital Fee", hospital_rate, days, totals.get("hospital", 0), alt_bg=False)
 
         # Fixed charges
         y = draw_table_row(y, "Doctor Fee", 0, 0, totals.get("doctor", 0), is_fixed=True, alt_bg=True)
         y = draw_table_row(y, "Service Charge", 0, 0, totals.get("service", 0), is_fixed=True, alt_bg=False)
+        
+        # Discount (subtract from total)
+        discount_amount = totals.get("discount", 0)
+        if discount_amount > 0:
+            y = draw_table_row(y, "Discount", 0, 0, -discount_amount, is_fixed=True, alt_bg=True)
 
         # Grand total row with extra spacing below
         y -= 3

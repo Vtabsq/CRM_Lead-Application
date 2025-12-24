@@ -17,6 +17,33 @@ import FileManager from './FileManager';  // Ensure this exists
 import BedManagement from './BedManagement';
 import SearchData from './SearchData';
 import AIChat from './AIChat';
+import Home from './Home';
+
+
+// Invoice Module
+import InvoiceList from './Invoice/InvoiceList';
+import InvoiceCreate from './Invoice/InvoiceCreate';
+import InvoiceCreateNew from './Invoice/InvoiceCreateNew';
+import InvoiceView from './Invoice/InvoiceView';
+import InvoicePageNew from './Invoice/InvoicePageNew';
+import InvoiceUpload from './Invoice/InvoiceUpload';
+import InvoiceMonitor from './Invoice/InvoiceMonitor';
+import ServiceCatalog from './components/ServiceCatalog';
+
+// Home Care Module
+import HomeCareList from './HomeCare/HomeCareList';
+import HomeCareBillingHistory from './HomeCare/HomeCareBillingHistory';
+import HomeCareBillingPreview from './HomeCare/HomeCareBillingPreview';
+import HomeCareCreate from './HomeCare/HomeCareCreate';
+import HomeCareEdit from './HomeCare/HomeCareEdit';
+
+// Patient Admission Module
+import PatientAdmissionList from './PatientAdmission/PatientAdmissionList';
+import PatientAdmissionBillingHistory from './PatientAdmission/PatientAdmissionBillingHistory';
+import PatientAdmissionBillingPreview from './PatientAdmission/PatientAdmissionBillingPreview';
+import PatientAdmissionCreate from './PatientAdmission/PatientAdmissionCreate';
+import PatientAdmissionEdit from './PatientAdmission/PatientAdmissionEdit';
+
 
 // Import API configuration
 import API_BASE_URL from './config';
@@ -194,7 +221,8 @@ function App() {
           {/* Content */}
           <div className="flex-1 w-full overflow-y-auto">
             <Routes>
-              <Route path="/" element={<EnquiryPage />} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<Home />} />
               <Route path="/enquiries" element={<EnquiryPage />} />
               <Route path="/admission" element={<AdmissionRegistration generateMemberId={() => `MID-${Date.now()}-${Math.floor(Math.random() * 1000)}`} />} />
               <Route path="/billing-summary" element={<BillingSummary />} />
@@ -206,6 +234,28 @@ function App() {
               <Route path="/file-manager" element={<FileManager />} />
               <Route path="/bed-availability" element={<BedManagement />} />
               <Route path="/search" element={<SearchData />} />
+              <Route path="/invoice" element={<InvoiceList />} />
+              <Route path="/invoice/create" element={<InvoiceCreateNew />} />
+              <Route path="/invoice/new" element={<InvoicePageNew />} />
+              <Route path="/invoice/upload" element={<InvoiceUpload />} />
+              <Route path="/invoice/monitor" element={<InvoiceMonitor />} />
+              <Route path="/service-catalog" element={<ServiceCatalog />} />
+              <Route path="/invoice/view/:id" element={<InvoiceView />} />
+
+              {/* Home Care Routes */}
+              <Route path="/homecare/clients" element={<HomeCareList />} />
+              <Route path="/homecare/create" element={<HomeCareCreate />} />
+              <Route path="/homecare/edit/:patientName" element={<HomeCareEdit />} />
+              <Route path="/homecare/billing-history/:patientName" element={<HomeCareBillingHistory />} />
+              <Route path="/homecare/billing-preview" element={<HomeCareBillingPreview />} />
+
+              {/* Patient Admission Routes */}
+              <Route path="/patientadmission/clients" element={<PatientAdmissionList />} />
+              <Route path="/patientadmission/create" element={<PatientAdmissionCreate />} />
+              <Route path="/patientadmission/edit/:patientName" element={<PatientAdmissionEdit />} />
+              <Route path="/patientadmission/billing-history/:patientName" element={<PatientAdmissionBillingHistory />} />
+              <Route path="/patientadmission/billing-preview" element={<PatientAdmissionBillingPreview />} />
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

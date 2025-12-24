@@ -389,5 +389,11 @@
     "label": "Ed Comments",
     "data_type": "text",
     "options": []
+  },
+  {
+    "name": "new_field_29",
+    "label": "New Field 29",
+    "data_type": "text",
+    "options": []
   }
 ]

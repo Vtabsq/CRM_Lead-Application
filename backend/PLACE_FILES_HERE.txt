@@ -10,8 +10,19 @@ Please place the following files in this directory (backend/):
 2. google_credentials.json
    - Google service account credentials
    - See GOOGLE_SHEETS_SETUP.md for setup instructions
+   - This single credential file is used for BOTH:
+     * CRM Lead data (Sheet1 worksheet)
+     * Patient Admission data (Patient Admission worksheet)
 
-⚠️ IMPORTANT SECURITY NOTES:
+⚠️ IMPORTANT NOTES:
+- Your Google Sheet should contain multiple worksheets:
+  * "Sheet1" - for lead/enquiry data
+  * "Patient Admission" - for admission data
+  * Other worksheets as needed
+- Only ONE credentials file is needed (google_credentials.json)
+- The service account must have edit access to your Google Sheet
+
+⚠️ SECURITY NOTES:
 - Never commit these files to version control
 - They are already listed in .gitignore
 - Keep google_credentials.json secure

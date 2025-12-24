@@ -34,18 +34,24 @@ const BillingSummary = () => {
         room_charge: 0,
         bed_charge: 0,
         nurse_payment: 0,
+        additional_nurse_payment: 0,
+        other_charges_amenities: 0,
         hospital_payment: 0,
         doctor_fee: 0,
-        service_charge: 0
+        service_charge: 0,
+        discount: 0
     });
 
     const [totals, setTotals] = useState({
         room: 0,
         bed: 0,
         nurse: 0,
+        additional_nurse: 0,
+        other_charges: 0,
         hospital: 0,
         doctor: 0,
         service: 0,
+        discount: 0,
         grand: 0
     });
 
@@ -202,33 +208,50 @@ const BillingSummary = () => {
             room_charge: roomRate,
             bed_charge: defaultCharges.bed_service_charge || 0,
             nurse_payment: defaultCharges.nurse_fee || 0,
+            additional_nurse_payment: 0,
+            other_charges_amenities: 0,
             hospital_payment: defaultCharges.registration_fee || 0,
             doctor_fee: defaultCharges.consultation_fee || 0,
-            service_charge: defaultCharges.miscellaneous_fee || 0
+            service_charge: defaultCharges.miscellaneous_fee || 0,
+            discount: 0
         });
     };
 
     // --- 5. Auto Calculation ---
     useEffect(() => {
         const days = calculatedDays > 0 ? calculatedDays : 1;
-        const { room_charge, bed_charge, nurse_payment, hospital_payment, doctor_fee, service_charge } = billingInputs;
+        const {
+            room_charge, bed_charge, nurse_payment,
+            additional_nurse_payment, other_charges_amenities,
+            hospital_payment, doctor_fee, service_charge, discount
+        } = billingInputs;
 
+        // Daily charges (multiplied by days)
         const tRoom = Number(room_charge) * days;
         const tBed = Number(bed_charge) * days;
         const tNurse = Number(nurse_payment) * days;
+        const tAdditionalNurse = Number(additional_nurse_payment) * days;
+        const tOtherCharges = Number(other_charges_amenities) * days;
         const tHospital = Number(hospital_payment) * days;
 
-        const subTotal = tRoom + tBed + tNurse + tHospital;
+        const subTotal = tRoom + tBed + tNurse + tAdditionalNurse + tOtherCharges + tHospital;
+
+        // Fixed charges
         const fixedVals = Number(doctor_fee) + Number(service_charge);
-        const grand = subTotal + fixedVals;
+
+        // Grand total with discount subtraction (prevent negative)
+        const grand = Math.max(0, subTotal + fixedVals - Number(discount));
 
         setTotals({
             room: tRoom,
             bed: tBed,
             nurse: tNurse,
+            additional_nurse: tAdditionalNurse,
+            other_charges: tOtherCharges,
             hospital: tHospital,
             doctor: Number(doctor_fee),
             service: Number(service_charge),
+            discount: Number(discount),
             grand: grand
         });
 
@@ -435,6 +458,8 @@ const BillingSummary = () => {
                                     <InputRow label="Room Charge" name="room_charge" val={billingInputs.room_charge} set={setBillingInputs} total={totals.room} />
                                     <InputRow label="Bed Charge" name="bed_charge" val={billingInputs.bed_charge} set={setBillingInputs} total={totals.bed} />
                                     <InputRow label="Nurse Fee" name="nurse_payment" val={billingInputs.nurse_payment} set={setBillingInputs} total={totals.nurse} />
+                                    <InputRow label="Additional Nurse Fee" name="additional_nurse_payment" val={billingInputs.additional_nurse_payment} set={setBillingInputs} total={totals.additional_nurse} />
+                                    <InputRow label="Other Charges (Amenities)" name="other_charges_amenities" val={billingInputs.other_charges_amenities} set={setBillingInputs} total={totals.other_charges} />
                                     <InputRow label="Hospital Fee" name="hospital_payment" val={billingInputs.hospital_payment} set={setBillingInputs} total={totals.hospital} />
                                 </div>
                             </div>
@@ -447,6 +472,7 @@ const BillingSummary = () => {
                                 <div className="space-y-3">
                                     <InputRow label="Doctor Fee" name="doctor_fee" val={billingInputs.doctor_fee} set={setBillingInputs} isFixed />
                                     <InputRow label="Service Charge" name="service_charge" val={billingInputs.service_charge} set={setBillingInputs} isFixed />
+                                    <InputRow label="Discount" name="discount" val={billingInputs.discount} set={setBillingInputs} isFixed />
                                 </div>
                             </div>
                         </div>

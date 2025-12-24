@@ -168,7 +168,6 @@ const BedManagement = () => {
 
             let id = '';
             let name = 'Unknown';
-            let foundName = '';
 
             // 1. Find ID
             for (const v of rowVals) {
@@ -178,27 +177,40 @@ const BedManagement = () => {
                 }
             }
 
-            // 2. Find Name (First non-ID text field)
-            for (const v of rowVals) {
-                if (v === id) continue;
-                // Avoid dates, emails, gender, etc? 
-                if (/male|active|inactive|good|bad|interested/i.test(v)) continue;
-                if (/\d/.test(v)) continue; // skip numbers
-                if (/@/.test(v)) continue; // skip emails
+            // 2. Find Name using header-based approach
+            // Look for "Patient Name" or "Name" column specifically
+            if (patientHeaders && patientHeaders.length > 0) {
+                const patientNameIdx = patientHeaders.findIndex(h =>
+                    /^patient\s*name$/i.test(h) || /^name$/i.test(h)
+                );
 
-                if (!foundName && nameRegex.test(v)) {
-                    foundName = v;
-                    break;
+                if (patientNameIdx !== -1 && rowVals[patientNameIdx]) {
+                    name = rowVals[patientNameIdx];
                 }
             }
-            if (foundName) name = foundName;
+
+            // Fallback: If header-based detection failed, use heuristic
+            if (name === 'Unknown') {
+                for (const v of rowVals) {
+                    if (v === id) continue;
+                    // Avoid dates, emails, gender, etc
+                    if (/male|active|inactive|good|bad|interested/i.test(v)) continue;
+                    if (/\d/.test(v)) continue; // skip numbers
+                    if (/@/.test(v)) continue; // skip emails
+
+                    if (nameRegex.test(v)) {
+                        name = v;
+                        break;
+                    }
+                }
+            }
 
             if (!id) return null; // Must have ID
             if (occupiedMemberIds.has(id)) return null;
 
             return { id, name, key: i, original: row };
         }).filter(item => item !== null);
-    }, [patients, occupiedMemberIds]);
+    }, [patients, occupiedMemberIds, patientHeaders]);
 
     const handleMemberIdSelect = (e) => {
         const val = e.target.value;
@@ -234,26 +246,40 @@ const BedManagement = () => {
             if (!foundGender && genderRegex.test(v)) foundGender = v;
         }
 
-        // 2. Identify Name (First valid text that isn't ID, Gender, Email, Date-ish)
-        for (const v of rowVals) {
-            if (!v) continue;
-            if (idRegex.test(v)) continue;
-            if (genderRegex.test(v)) continue;
-            if (emailRegex.test(v)) continue;
-            if (/\d/.test(v)) continue; // Name usually no digits
-            if (/active|inactive|good|bad|interested/i.test(v)) continue; // Status keywords
+        // 2. Identify Name using header-based approach
+        // Look for "Patient Name" or "Name" column specifically
+        if (patientHeaders && patientHeaders.length > 0) {
+            const patientNameIdx = patientHeaders.findIndex(h =>
+                /^patient\s*name$/i.test(h) || /^name$/i.test(h)
+            );
 
-            if (!foundName) {
-                foundName = v;
-                continue; // Found name, keep looking for Pain Point
+            if (patientNameIdx !== -1 && rowVals[patientNameIdx]) {
+                foundName = rowVals[patientNameIdx];
             }
+        }
 
-            // 3. Identify Pain Point (Subsequent text field?)
-            // Heuristic: If we found name, the NEXT significant text field might be Pain Point / Service.
-            // Or maybe column keywords if we had them, but we don't trust indices.
-            // Let's look for known service keywords.
-            if (!foundPain && /care|therapy|nursing|living|checkup|consultation|emergency|diagnosis/i.test(v)) {
-                foundPain = v;
+        // Fallback: If header-based detection failed, use heuristic
+        if (!foundName) {
+            for (const v of rowVals) {
+                if (!v) continue;
+                if (idRegex.test(v)) continue;
+                if (genderRegex.test(v)) continue;
+                if (emailRegex.test(v)) continue;
+                if (/\d/.test(v)) continue; // Name usually no digits
+                if (/active|inactive|good|bad|interested/i.test(v)) continue; // Status keywords
+
+                if (!foundName) {
+                    foundName = v;
+                    continue; // Found name, keep looking for Pain Point
+                }
+
+                // 3. Identify Pain Point (Subsequent text field?)
+                // Heuristic: If we found name, the NEXT significant text field might be Pain Point / Service.
+                // Or maybe column keywords if we had them, but we don't trust indices.
+                // Let's look for known service keywords.
+                if (!foundPain && /care|therapy|nursing|living|checkup|consultation|emergency|diagnosis/i.test(v)) {
+                    foundPain = v;
+                }
             }
         }
 

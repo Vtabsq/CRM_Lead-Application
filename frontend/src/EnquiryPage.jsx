@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle, XCircle, User, Phone, Edit3, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle, XCircle, User, Phone, Edit3, Upload, MessageSquare } from 'lucide-react';
 
 import API_BASE_URL from './config';
 const FIELDS_PER_PAGE = 10;
 const FOLLOW_UP_PAGE_INDEX = 2;
+const COMPLAINTS_PAGE_INDEX = 3;
 
 const PAGE_TITLES = {
     0: 'Patient Information',
     1: 'Enquiry Details',
-    2: 'Follow Up and Status'
+    2: 'Follow Up and Status',
+    3: 'Complaints'
 };
 
 const normalizeName = (name) => String(name || '').trim().toLowerCase().replace(/_/g, ' ');
@@ -56,6 +58,15 @@ const EnquiryPage = () => {
     const [message, setMessage] = useState(null);
     const [error, setError] = useState('');
     const [sheetUrl, setSheetUrl] = useState(null);
+
+    // Complaint fields state
+    const [complaintData, setComplaintData] = useState({
+        complaint: '',
+        complaint_resolve_date: '',
+        complaint_status: '',
+        feedback: '',
+        revenue: '0'
+    });
 
     const reorderFieldsForInquiryPage = (inputFields = []) => {
         if (!Array.isArray(inputFields) || inputFields.length === 0) return inputFields;
@@ -401,7 +412,17 @@ const EnquiryPage = () => {
                 return;
             }
 
-            const payloadData = convertDatesForPayload(formData);
+            // Merge complaint data with form data
+            const mergedData = {
+                ...formData,
+                'Complaint': complaintData.complaint,
+                'Complaint Resolve Date': complaintData.complaint_resolve_date,
+                'Complaint Status': complaintData.complaint_status,
+                'Feedback': complaintData.feedback,
+                'Revenue': complaintData.revenue
+            };
+
+            const payloadData = convertDatesForPayload(mergedData);
             const response = await axios.post(`${API_BASE_URL}/submit`, { data: payloadData });
 
             setMessage(response.data.message || 'Data submitted successfully!');
@@ -412,6 +433,14 @@ const EnquiryPage = () => {
                 setFormData(reset);
                 setCurrentPage(0);
                 setMessage(null);
+                // Reset complaint data
+                setComplaintData({
+                    complaint: '',
+                    complaint_resolve_date: '',
+                    complaint_status: '',
+                    feedback: '',
+                    revenue: '0'
+                });
             }, 3000);
 
         } catch (err) {
@@ -556,8 +585,8 @@ const EnquiryPage = () => {
             <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between relative px-4 my-4">
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10" />
-                    {[0, 1, 2].map((stepIdx) => {
-                        const stepIcons = [User, Edit3, Phone];
+                    {[0, 1, 2, 3].map((stepIdx) => {
+                        const stepIcons = [User, Edit3, Phone, MessageSquare];
                         const Icon = stepIcons[stepIdx];
                         const isActive = currentPage >= stepIdx;
                         const isCurrent = currentPage === stepIdx;
@@ -576,27 +605,107 @@ const EnquiryPage = () => {
 
                 {/* Form Content */}
                 <div className="bg-white shadow-xl p-10 mb-2 border-2 border-blue-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                        {currentFields.map((field) => {
-                            // Conditional Rendering for Reason for Rejection
-                            if (normalizeName(field.name) === REJECTION_REASON_FIELD) {
-                                const leadStatusField = schema.find(f => normalizeName(f.name) === LEAD_STATUS_FIELD);
-                                const currentStatus = normalizeName(formData[leadStatusField?.name]);
-                                const isVisible = currentStatus.includes('closed') || currentStatus.includes('rejected') || currentStatus === 'lost';
-                                if (!isVisible) return null;
-                            }
+                    {currentPage === COMPLAINTS_PAGE_INDEX ? (
+                        /* Complaints Page */
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Complaints Information</h3>
 
-                            return (
-                                <div key={field.name}>
+                            {/* 2-Column Grid Layout */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                {/* Type of Complaint */}
+                                <div>
                                     <label className="block text-base font-bold text-gray-800 mb-2">
-                                        {field.label}
-                                        {isRequiredField(field.name) && <span className="text-red-500 ml-1">*</span>}
+                                        Type of Complaint
                                     </label>
-                                    {renderField(field)}
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
+                                        value={complaintData.complaint}
+                                        onChange={(e) => setComplaintData(prev => ({ ...prev, complaint: e.target.value }))}
+                                        placeholder="Enter complaint type (if any)"
+                                    />
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                {/* Complaint Status */}
+                                <div>
+                                    <label className="block text-base font-bold text-gray-800 mb-2">
+                                        Complaint Status
+                                    </label>
+                                    <select
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
+                                        value={complaintData.complaint_status}
+                                        onChange={(e) => setComplaintData(prev => ({ ...prev, complaint_status: e.target.value }))}
+                                    >
+                                        <option value="">Select Status</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+
+                                {/* Feedback */}
+                                <div>
+                                    <label className="block text-base font-bold text-gray-800 mb-2">
+                                        Feedback
+                                    </label>
+                                    <textarea
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
+                                        value={complaintData.feedback}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value.length <= 100) {
+                                                setComplaintData(prev => ({ ...prev, feedback: value }));
+                                            }
+                                        }}
+                                        rows="2"
+                                        maxLength="100"
+                                        placeholder="Enter feedback (max 100 characters)"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {complaintData.feedback.length}/100 characters
+                                    </p>
+                                </div>
+
+                                {/* Revenue */}
+                                <div>
+                                    <label className="block text-base font-bold text-gray-800 mb-2">
+                                        Revenue (₹)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
+                                        value={complaintData.revenue}
+                                        onChange={(e) => setComplaintData(prev => ({ ...prev, revenue: e.target.value }))}
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Regular Fields Pages */
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                            {currentFields.map((field) => {
+                                // Conditional Rendering for Reason for Rejection
+                                if (normalizeName(field.name) === REJECTION_REASON_FIELD) {
+                                    const leadStatusField = schema.find(f => normalizeName(f.name) === LEAD_STATUS_FIELD);
+                                    const currentStatus = normalizeName(formData[leadStatusField?.name]);
+                                    const isVisible = currentStatus.includes('closed') || currentStatus.includes('rejected') || currentStatus === 'lost';
+                                    if (!isVisible) return null;
+                                }
+
+                                return (
+                                    <div key={field.name}>
+                                        <label className="block text-base font-bold text-gray-800 mb-2">
+                                            {field.label}
+                                            {isRequiredField(field.name) && <span className="text-red-500 ml-1">*</span>}
+                                        </label>
+                                        {renderField(field)}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Pagination / Submit */}
