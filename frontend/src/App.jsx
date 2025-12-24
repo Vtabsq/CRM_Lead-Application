@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } from 'lucide-react';
 
 // Components
@@ -66,6 +67,8 @@ function App() {
   const [loginPass, setLoginPass] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
 
   const todayDisplay = useMemo(() => {
     return new Date().toLocaleDateString('en-IN', {
@@ -262,22 +265,18 @@ function App() {
         </div>
       </div>
     );
-}
-
   }
 
-  // Main App Structure
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        {/* Subtle gradient background */}
-        <div className="fixed inset-0 bg-gradient-to-br from-blue-50/50 via-emerald-50/50 to-blue-50/50 pointer-events-none"></div>
-        {/* Grid overlay */}
-        <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
-        
-        {/* Main content */}
-        <div className="relative flex-1 flex flex-col z-10">
-          <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-500 to-green-500 border-b-4 border-green-600 shadow-lg">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Subtle gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50/50 via-emerald-50/50 to-blue-50/50 pointer-events-none"></div>
+      {/* Grid overlay */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
+      
+      {/* Main content */}
+      <div className="relative flex-1 flex flex-col z-10">
+        <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-500 to-green-500 border-b-4 border-green-600 shadow-lg">
             <div className="w-full px-4 py-1.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <img
@@ -380,5 +379,8 @@ function App() {
 
       {/* AI Chat Overlay */}
       <AIChat />
-    </BrowserRouter>
+    </div>
   );
+}
+
+export default App;
