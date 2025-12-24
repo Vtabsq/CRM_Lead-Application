@@ -718,7 +718,7 @@ const EnquiryPage = () => {
                         <ChevronLeft className="w-4 h-4 mr-2" /> Previous
                     </button>
 
-                    {currentPage === totalPages - 1 ? (
+                    {currentPage === COMPLAINTS_PAGE_INDEX ? (
                         <button
                             onClick={handleSubmit}
                             disabled={submitting}
