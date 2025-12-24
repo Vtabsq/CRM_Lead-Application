@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2, Sparkles, Clock3 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Components
 import Sidebar from './Sidebar';
@@ -264,103 +265,125 @@ function App() {
     );
   }
 
-  // Main App Structure
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 flex flex-col">
-        {/* Top Header */}
-        <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-500 to-green-500 border-b-4 border-green-600 shadow-lg">
-          <div className="w-full px-4 py-1.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img
-                src="/grand-world-logo.svg"
-                alt="Grand World Elder Care"
-                className="w-12 h-10 shadow-lg bg-white/90 object-contain p-2 rounded"
-              />
-              <div>
-                <h1 className="text-2xl font-semibold text-white drop-shadow-lg">CRM Lead Application</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-white bg-white/20 px-3 py-1.5 backdrop-blur rounded">
-                <div className="h-1.5 w-3 rounded-full bg-green-300 animate-pulse" />
-                System Ready
-              </div>
-
-              <div className="flex items-center gap-3 bg-white/20 px-4 py-2 backdrop-blur rounded-md">
-                <div className="text-white text-sm opacity-90">
-                  User: <span className="font-semibold">{loginUser}</span>
-                </div>
-                <div className="text-white text-sm opacity-90">
-                  Date: <span className="font-semibold">{todayDisplay}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-1.5 text-sm font-medium rounded-md transition-all bg-gray-400 hover:bg-red-500 text-white shadow-md"
-                  >
-                    <XCircle className="w-4 h-4 inline mr-1" />
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content Area */}
-        <div className="flex-1 w-full px-4 py-4 flex gap-4 overflow-hidden">
-          {/* New Router-based Sidebar (No props needed) */}
-          <Sidebar />
-
-          {/* Content */}
-          <div className="flex-1 w-full overflow-y-auto">
-            <Routes>
-              <Route path="/" element={<Navigate to="/home" replace />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/enquiries" element={<EnquiryPage />} />
-              <Route path="/admission" element={<AdmissionRegistration generateMemberId={() => `MID-${Date.now()}-${Math.floor(Math.random() * 1000)}`} />} />
-              <Route path="/billing-summary" element={<BillingSummary />} />
-              <Route path="/analysis" element={<AnalyticsReport />} />
-              <Route path="/schema" element={<SchemaEditor />} />
-              <Route path="/charge-summary" element={<ChargeSummary />} />
-              <Route path="/documents" element={<Documents />} />
-              <Route path="/notifications" element={<NotificationSettings />} />
-              <Route path="/file-manager" element={<FileManager />} />
-              <Route path="/bed-availability" element={<BedManagement />} />
-              <Route path="/search" element={<SearchData />} />
-              <Route path="/invoice" element={<InvoiceList />} />
-              <Route path="/invoice/create" element={<InvoiceCreateNew />} />
-              <Route path="/invoice/new" element={<InvoicePageNew />} />
-              <Route path="/invoice/upload" element={<InvoiceUpload />} />
-              <Route path="/invoice/monitor" element={<InvoiceMonitor />} />
-              <Route path="/service-catalog" element={<ServiceCatalog />} />
-              <Route path="/invoice/view/:id" element={<InvoiceView />} />
-
-              {/* Home Care Routes */}
-              <Route path="/homecare/clients" element={<HomeCareList />} />
-              <Route path="/homecare/create" element={<HomeCareCreate />} />
-              <Route path="/homecare/edit/:patientName" element={<HomeCareEdit />} />
-              <Route path="/homecare/billing-history/:patientName" element={<HomeCareBillingHistory />} />
-              <Route path="/homecare/billing-preview" element={<HomeCareBillingPreview />} />
-
-              {/* Patient Admission Routes */}
-              <Route path="/patientadmission/clients" element={<PatientAdmissionList />} />
-              <Route path="/patientadmission/create" element={<PatientAdmissionCreate />} />
-              <Route path="/patientadmission/edit/:patientName" element={<PatientAdmissionEdit />} />
-              <Route path="/patientadmission/billing-history/:patientName" element={<PatientAdmissionBillingHistory />} />
-              <Route path="/patientadmission/billing-preview" element={<PatientAdmissionBillingPreview />} />
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </div>
-
-        {/* AI Chat Overlay */}
-        <AIChat />
-      </div>
+      <AppShell
+        loginUser={loginUser}
+        todayDisplay={todayDisplay}
+        handleLogout={handleLogout}
+      />
     </BrowserRouter>
   );
 }
+
+const AppShell = ({ loginUser, todayDisplay, handleLogout }) => {
+  const location = useLocation();
+
+  const renderWithMotion = (element) => (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="h-full"
+    >
+      {element}
+    </motion.div>
+  );
+
+  return (
+    <div className="app-surface min-h-screen text-slate-100 relative overflow-hidden">
+      <div className="app-glow app-glow--one" />
+      <div className="app-glow app-glow--two" />
+
+      <header className="app-header">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/10 shadow-lg shadow-emerald-900/30">
+              <Sparkles className="h-6 w-6 text-emerald-300" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-white/60">Grand World</p>
+              <h1 className="text-2xl font-semibold text-white">CRM Intelligence Workspace</h1>
+            </div>
+          </div>
+          <div className="flex gap-3 text-xs text-white/80">
+            <div className="badge badge--primary">
+              <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
+              System ready
+            </div>
+            <div className="badge badge--primary">
+              <Clock3 className="h-4 w-4" />
+              {todayDisplay}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-2 backdrop-blur border border-white/10">
+          <div className="text-sm">
+            <p className="text-white/60 text-xs">Signed in as</p>
+            <p className="text-white font-semibold">{loginUser || 'Operations'}</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2 text-sm font-semibold shadow-lg shadow-rose-900/30 transition hover:shadow-xl"
+          >
+            <XCircle className="h-4 w-4" />
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <main className="app-main">
+        <Sidebar />
+        <section className="app-content">
+          <div className="app-content__inner">
+            <AnimatePresence mode="wait">
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={renderWithMotion(<Home />)} />
+                <Route path="/enquiries" element={renderWithMotion(<EnquiryPage />)} />
+                <Route
+                  path="/admission"
+                  element={renderWithMotion(
+                    <AdmissionRegistration generateMemberId={() => `MID-${Date.now()}-${Math.floor(Math.random() * 1000)}`} />
+                  )}
+                />
+                <Route path="/billing-summary" element={renderWithMotion(<BillingSummary />)} />
+                <Route path="/analysis" element={renderWithMotion(<AnalyticsReport />)} />
+                <Route path="/schema" element={renderWithMotion(<SchemaEditor />)} />
+                <Route path="/charge-summary" element={renderWithMotion(<ChargeSummary />)} />
+                <Route path="/documents" element={renderWithMotion(<Documents />)} />
+                <Route path="/notifications" element={renderWithMotion(<NotificationSettings />)} />
+                <Route path="/file-manager" element={renderWithMotion(<FileManager />)} />
+                <Route path="/bed-availability" element={renderWithMotion(<BedManagement />)} />
+                <Route path="/search" element={renderWithMotion(<SearchData />)} />
+                <Route path="/invoice" element={renderWithMotion(<InvoiceList />)} />
+                <Route path="/invoice/create" element={renderWithMotion(<InvoiceCreateNew />)} />
+                <Route path="/invoice/new" element={renderWithMotion(<InvoicePageNew />)} />
+                <Route path="/invoice/upload" element={renderWithMotion(<InvoiceUpload />)} />
+                <Route path="/invoice/monitor" element={renderWithMotion(<InvoiceMonitor />)} />
+                <Route path="/service-catalog" element={renderWithMotion(<ServiceCatalog />)} />
+                <Route path="/invoice/view/:id" element={renderWithMotion(<InvoiceView />)} />
+                <Route path="/homecare/clients" element={renderWithMotion(<HomeCareList />)} />
+                <Route path="/homecare/create" element={renderWithMotion(<HomeCareCreate />)} />
+                <Route path="/homecare/edit/:patientName" element={renderWithMotion(<HomeCareEdit />)} />
+                <Route path="/homecare/billing-history/:patientName" element={renderWithMotion(<HomeCareBillingHistory />)} />
+                <Route path="/homecare/billing-preview" element={renderWithMotion(<HomeCareBillingPreview />)} />
+                <Route path="/patientadmission/clients" element={renderWithMotion(<PatientAdmissionList />)} />
+                <Route path="/patientadmission/create" element={renderWithMotion(<PatientAdmissionCreate />)} />
+                <Route path="/patientadmission/edit/:patientName" element={renderWithMotion(<PatientAdmissionEdit />)} />
+                <Route path="/patientadmission/billing-history/:patientName" element={renderWithMotion(<PatientAdmissionBillingHistory />)} />
+                <Route path="/patientadmission/billing-preview" element={renderWithMotion(<PatientAdmissionBillingPreview />)} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AnimatePresence>
+          </div>
+        </section>
+      </main>
+
+      <AIChat />
+    </div>
+  );
+};
 
 export default App;
