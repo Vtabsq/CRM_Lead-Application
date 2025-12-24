@@ -44,12 +44,12 @@ const Sidebar = () => {
             <button
                 onClick={() => navigate(path)}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} 
-                    px-4 py-2 transition-all duration-300 relative group
+                    px-4 py-2.5 transition-all duration-200 relative group rounded-xl
                     ${active
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-green-50 border-2 border-transparent hover:border-green-500'
+                        ? 'bg-gradient-to-r from-blue-600 via-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-900/20'
+                        : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-200'
                     }
-                    ${isSubItem && !isCollapsed ? 'pl-8' : ''}
+                    ${isSubItem && !isCollapsed ? 'ml-3' : ''}
                 `}
                 title={isCollapsed ? label : ''}
             >
@@ -60,7 +60,7 @@ const Sidebar = () => {
                     </span>
                 )}
                 {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-base opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity duration-200 shadow-xl">
+                    <div className="absolute left-full ml-2 px-3 py-2 bg-slate-900 text-white text-sm opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-all duration-200 rounded-xl shadow-xl shadow-slate-900/20 border border-slate-800">
                         {label}
                     </div>
                 )}
@@ -72,9 +72,9 @@ const Sidebar = () => {
         <button
             onClick={onClick}
             className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} 
-                px-4 py-2 transition-all duration-300 relative group
-                bg-gradient-to-r from-green-50 to-green-100 text-gray-800 hover:from-green-100 hover:to-green-200
-                border-2 border-green-200 font-bold
+                px-4 py-3 transition-all duration-200 relative group rounded-xl
+                bg-slate-900/[0.02] text-slate-900 hover:bg-slate-900/[0.04]
+                border border-slate-200/40
             `}
             title={isCollapsed ? label : ''}
         >
@@ -90,7 +90,7 @@ const Sidebar = () => {
                 <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
             )}
             {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-base opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity duration-200 shadow-xl">
+                <div className="absolute left-full ml-2 px-3 py-2 bg-slate-900 text-white text-sm opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-all duration-200 rounded-xl shadow-xl shadow-slate-900/20 border border-slate-800">
                     {label}
                 </div>
             )}
@@ -99,9 +99,14 @@ const Sidebar = () => {
 
     return (
         <aside className={`sticky top-0 h-screen transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'} hidden md:block z-10`}>
-            <div className="bg-white shadow-xl p-1.5 border-2 border-blue-200 h-full flex flex-col overflow-y-auto">
-                <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4`}>
-                    <button onClick={toggleSidebar} className="p-1.5 hover:bg-gray-100 text-gray-600 transition-colors">
+            <div className="bg-white/95 backdrop-blur-xl shadow-2xl shadow-slate-900/10 p-2 border-r border-slate-200/60 h-full flex flex-col overflow-y-auto">
+                {/* Gradient accent line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-emerald-500 to-green-500"></div>
+                <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-6 px-2`}>
+                    <button 
+                        onClick={toggleSidebar} 
+                        className="p-2 hover:bg-slate-100 text-slate-600 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                    >
                         {isCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
                     </button>
                 </div>
