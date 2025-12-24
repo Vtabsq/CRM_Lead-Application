@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } from 'lucide-react';
@@ -8,18 +7,17 @@ import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } fro
 import Sidebar from './Sidebar';
 import EnquiryPage from './EnquiryPage';
 import AdmissionRegistration from './AdmissionRegistration';
-import BillingSummary from "./BillingSummary"; // Ensure export default
-import AnalyticsReport from "./AnalysisReport"; // user used AnalysisReport.jsx but imported as AnalyticsReport previously, staying consistent with filename if possible
+import BillingSummary from "./BillingSummary";
+import AnalyticsReport from "./AnalysisReport";
 import SchemaEditor from './SchemaEditor';
 import ChargeSummary from './ChargeSummary';
 import Documents from './Documents';
 import NotificationSettings from './NotificationSettings';
-import FileManager from './FileManager';  // Ensure this exists
+import FileManager from './FileManager';
 import BedManagement from './BedManagement';
 import SearchData from './SearchData';
 import AIChat from './AIChat';
 import Home from './Home';
-
 
 // Invoice Module
 import InvoiceList from './Invoice/InvoiceList';
@@ -44,7 +42,6 @@ import PatientAdmissionBillingHistory from './PatientAdmission/PatientAdmissionB
 import PatientAdmissionBillingPreview from './PatientAdmission/PatientAdmissionBillingPreview';
 import PatientAdmissionCreate from './PatientAdmission/PatientAdmissionCreate';
 import PatientAdmissionEdit from './PatientAdmission/PatientAdmissionEdit';
-
 
 // Import API configuration
 import API_BASE_URL from './config';
@@ -270,110 +267,109 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Subtle gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50/50 via-emerald-50/50 to-blue-50/50 pointer-events-none"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50/50 via-emerald-50/50 to-blue-50/50 pointer-events-none" />
       {/* Grid overlay */}
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
       
       {/* Main content */}
       <div className="relative flex-1 flex flex-col z-10">
         <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-500 to-green-500 border-b-4 border-green-600 shadow-lg">
-            <div className="w-full px-4 py-1.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <img
-                  src="/grand-world-logo.svg"
-                  alt="Grand World Elder Care"
-                  className="w-12 h-10 shadow-lg bg-white/90 object-contain p-2 rounded"
-                />
-                <div>
-                  <h1 className="text-2xl font-semibold text-white drop-shadow-lg">CRM Lead Application</h1>
-                </div>
+          <div className="w-full px-4 py-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img
+                src="/grand-world-logo.svg"
+                alt="Grand World Elder Care"
+                className="w-12 h-10 shadow-lg bg-white/90 object-contain p-2 rounded"
+              />
+              <div>
+                <h1 className="text-2xl font-semibold text-white drop-shadow-lg">CRM Lead Application</h1>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="hidden sm:flex items-center gap-2 text-xs text-white bg-white/20 px-3 py-1.5 backdrop-blur rounded">
-                  <div className="h-1.5 w-3 rounded-full bg-green-300 animate-pulse" />
-                  System Ready
-                </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 text-xs text-white bg-white/20 px-3 py-1.5 backdrop-blur rounded">
+                <div className="h-1.5 w-3 rounded-full bg-green-300 animate-pulse" />
+                System Ready
+              </div>
 
-                <div className="flex items-center gap-3 bg-white/20 px-4 py-2 backdrop-blur rounded-md">
-                  <div className="text-white text-sm opacity-90">
-                    User: <span className="font-semibold">{loginUser}</span>
-                  </div>
-                  <div className="text-white text-sm opacity-90">
-                    Date: <span className="font-semibold">{todayDisplay}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleLogout}
-                      className="px-4 py-1.5 text-sm font-medium rounded-md transition-all bg-gray-400 hover:bg-red-500 text-white shadow-md"
-                    >
-                      <XCircle className="w-4 h-4 inline mr-1" />
-                      Logout
-                    </button>
-                  </div>
+              <div className="flex items-center gap-3 bg-white/20 px-4 py-2 backdrop-blur rounded-md">
+                <div className="text-white text-sm opacity-90">
+                  User: <span className="font-semibold">{loginUser}</span>
+                </div>
+                <div className="text-white text-sm opacity-90">
+                  Date: <span className="font-semibold">{todayDisplay}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-1.5 text-sm font-medium rounded-md transition-all bg-gray-400 hover:bg-red-500 text-white shadow-md"
+                  >
+                    <XCircle className="w-4 h-4 inline mr-1" />
+                    Logout
+                  </button>
                 </div>
               </div>
             </div>
-          </header>
-
-          <div className="flex-1 flex">
-            {/* Sidebar */}
-            <Sidebar />
-
-            {/* Main Content Area */}
-            <main className={`transition-all duration-300 ease-in-out
-              ${location.pathname === '/' ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'} 
-              flex-1 h-screen overflow-y-auto px-6 py-8 animate-fade-in`}
-            >
-              <Routes>
-                {/* Home */}
-                <Route path="/" element={<Home />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/search" element={<SearchData />} />
-
-                {/* Enquiries */}
-                <Route path="/enquiries" element={<EnquiryPage />} />
-
-                {/* Patient Admission */}
-                <Route path="/admission" element={<AdmissionRegistration />} />
-                <Route path="/patientadmission/clients" element={<PatientAdmissionList />} />
-                <Route path="/patientadmission/create" element={<PatientAdmissionCreate />} />
-                <Route path="/patientadmission/edit/:patientName" element={<PatientAdmissionEdit />} />
-                <Route path="/patientadmission/billing-history/:patientName" element={<PatientAdmissionBillingHistory />} />
-                <Route path="/patientadmission/billing-preview" element={<PatientAdmissionBillingPreview />} />
-                <Route path="/bed-availability" element={<BedManagement />} />
-                <Route path="/billing-summary" element={<BillingSummary />} />
-
-                {/* Home Care */}
-                <Route path="/homecare/clients" element={<HomeCareList />} />
-                <Route path="/homecare/create" element={<HomeCareCreate />} />
-                <Route path="/homecare/edit/:patientName" element={<HomeCareEdit />} />
-                <Route path="/homecare/billing-history/:patientName" element={<HomeCareBillingHistory />} />
-                <Route path="/homecare/billing-preview" element={<HomeCareBillingPreview />} />
-
-                {/* Finance */}
-                <Route path="/invoice" element={<InvoiceList />} />
-                <Route path="/invoice/create" element={<InvoiceCreate />} />
-                <Route path="/invoice/create-new" element={<InvoiceCreateNew />} />
-                <Route path="/invoice/view/:invoiceId" element={<InvoiceView />} />
-                <Route path="/invoice/new" element={<InvoicePageNew />} />
-                <Route path="/invoice/upload" element={<InvoiceUpload />} />
-                <Route path="/invoice/monitor" element={<InvoiceMonitor />} />
-                <Route path="/service-catalog" element={<ServiceCatalog />} />
-
-                {/* Management */}
-                <Route path="/documents" element={<Documents />} />
-                <Route path="/schema" element={<SchemaEditor />} />
-                <Route path="/charge-summary" element={<ChargeSummary />} />
-                <Route path="/notifications" element={<NotificationSettings />} />
-                <Route path="/file-manager" element={<FileManager />} />
-
-                {/* Analytics */}
-                <Route path="/analysis" element={<AnalyticsReport />} />
-
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
           </div>
+        </header>
+
+        <div className="flex-1 flex">
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main Content Area */}
+          <main className={`transition-all duration-300 ease-in-out
+            ${location.pathname === '/' ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'} 
+            flex-1 h-screen overflow-y-auto px-6 py-8 animate-fade-in`}
+          >
+            <Routes>
+              {/* Home */}
+              <Route path="/" element={<Home />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/search" element={<SearchData />} />
+
+              {/* Enquiries */}
+              <Route path="/enquiries" element={<EnquiryPage />} />
+
+              {/* Patient Admission */}
+              <Route path="/admission" element={<AdmissionRegistration />} />
+              <Route path="/patientadmission/clients" element={<PatientAdmissionList />} />
+              <Route path="/patientadmission/create" element={<PatientAdmissionCreate />} />
+              <Route path="/patientadmission/edit/:patientName" element={<PatientAdmissionEdit />} />
+              <Route path="/patientadmission/billing-history/:patientName" element={<PatientAdmissionBillingHistory />} />
+              <Route path="/patientadmission/billing-preview" element={<PatientAdmissionBillingPreview />} />
+              <Route path="/bed-availability" element={<BedManagement />} />
+              <Route path="/billing-summary" element={<BillingSummary />} />
+
+              {/* Home Care */}
+              <Route path="/homecare/clients" element={<HomeCareList />} />
+              <Route path="/homecare/create" element={<HomeCareCreate />} />
+              <Route path="/homecare/edit/:patientName" element={<HomeCareEdit />} />
+              <Route path="/homecare/billing-history/:patientName" element={<HomeCareBillingHistory />} />
+              <Route path="/homecare/billing-preview" element={<HomeCareBillingPreview />} />
+
+              {/* Finance */}
+              <Route path="/invoice" element={<InvoiceList />} />
+              <Route path="/invoice/create" element={<InvoiceCreate />} />
+              <Route path="/invoice/create-new" element={<InvoiceCreateNew />} />
+              <Route path="/invoice/view/:invoiceId" element={<InvoiceView />} />
+              <Route path="/invoice/new" element={<InvoicePageNew />} />
+              <Route path="/invoice/upload" element={<InvoiceUpload />} />
+              <Route path="/invoice/monitor" element={<InvoiceMonitor />} />
+              <Route path="/service-catalog" element={<ServiceCatalog />} />
+
+              {/* Management */}
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/schema" element={<SchemaEditor />} />
+              <Route path="/charge-summary" element={<ChargeSummary />} />
+              <Route path="/notifications" element={<NotificationSettings />} />
+              <Route path="/file-manager" element={<FileManager />} />
+
+              {/* Analytics */}
+              <Route path="/analysis" element={<AnalyticsReport />} />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
         </div>
       </div>
 
