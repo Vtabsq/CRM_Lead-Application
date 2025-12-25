@@ -317,10 +317,7 @@ function App() {
           <Sidebar />
 
           {/* Main Content Area */}
-          <main className={`transition-all duration-300 ease-in-out
-            ${location.pathname === '/' ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'} 
-            flex-1 h-screen overflow-y-auto animate-fade-in`}
-          >
+          <main className="flex-1 h-screen overflow-y-auto animate-fade-in">
             <Routes>
               {/* Home */}
               <Route path="/" element={<Home />} />
