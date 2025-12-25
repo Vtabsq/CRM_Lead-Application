@@ -225,9 +225,9 @@ const Home = () => {
                         />
                         <DashboardCard
                             sectionKey="admittedPatients"
-                            title="Patients Admitted Yesterday"
-                            category="ADMISSIONS"
-                            description="Patients admitted into care yesterday. Confirms new revenue entries and operational workload."
+                            title="Enquiries Rejected Yesterday"
+                            category="ENQUIRIES"
+                            description="Enquiries that were rejected yesterday. Track loss reasons and follow-up opportunities."
                             count={dashboardData.admittedPatients.count}
                             data={dashboardData.admittedPatients.data}
                             icon={UserPlus}
