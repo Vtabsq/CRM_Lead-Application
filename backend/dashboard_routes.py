@@ -76,6 +76,20 @@ async def get_converted_leads_yesterday() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/enquiries-rejected-yesterday")
+async def get_enquiries_rejected_yesterday() -> Dict[str, Any]:
+    """
+    Get enquiries marked as closed/rejected yesterday
+    """
+    try:
+        return dashboard_service.get_enquiries_rejected_yesterday()
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in enquiries rejected endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/patients-admitted")
 async def get_patients_admitted(
     date_filter: str = Query("yesterday", description="Filter by 'yesterday' or 'today'")

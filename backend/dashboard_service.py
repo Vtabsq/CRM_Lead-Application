@@ -243,6 +243,51 @@ def get_leads_converted_yesterday() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to fetch converted leads: {str(e)}")
 
 
+def get_enquiries_rejected_yesterday() -> Dict[str, Any]:
+    """Get enquiries that were closed (rejected) yesterday"""
+    try:
+        client = get_google_sheet_client()
+        if not GOOGLE_SHEET_ID:
+            raise HTTPException(status_code=500, detail="Google Sheet ID not configured")
+
+        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+        worksheet = spreadsheet.worksheet("Enquiries")
+
+        all_values = worksheet.get_all_values()
+        if not all_values or len(all_values) < 2:
+            return {"data": [], "count": 0, "date_filter": get_yesterday()}
+
+        headers = all_values[0]
+        yesterday = get_yesterday()
+        rejection_keywords = ["closed", "lost", "rejected"]
+
+        results = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+
+            row_dict = {}
+            for idx, header in enumerate(headers):
+                if idx < len(row):
+                    row_dict[header] = row[idx]
+
+            enquiry_date = row_dict.get("Date", "")
+            lead_status = str(row_dict.get("Lead Status", "")).strip().lower()
+
+            if compare_dates(enquiry_date, yesterday) and any(keyword in lead_status for keyword in rejection_keywords):
+                results.append(transform_to_table_format(row_dict, "enquiry"))
+
+        return {
+            "data": results,
+            "count": len(results),
+            "date_filter": yesterday
+        }
+
+    except Exception as e:
+        print(f"Error fetching rejected enquiries: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch rejected enquiries: {str(e)}")
+
+
 def get_patients_admitted(date_filter: str = "yesterday") -> Dict[str, Any]:
     """Get patients admitted (yesterday or today)"""
     try:

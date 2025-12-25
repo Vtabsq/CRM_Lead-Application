@@ -6,7 +6,7 @@ const Home = () => {
     const [dashboardData, setDashboardData] = useState({
         previousDayEnquiries: { count: 0, data: [] },
         convertedLeads: { count: 0, data: [] },
-        admittedPatients: { count: 0, data: [] },
+        rejectedEnquiries: { count: 0, data: [] },
         complaintsReceived: { count: 0, data: [] },
         complaintsResolved: { count: 0, data: [] },
         followUpsDue: { count: 0, data: [] },
@@ -30,13 +30,13 @@ const Home = () => {
         setLoading(true);
         try {
             const [
-                enquiries, converted, admitted, complaintsRec, complaintsRes, followUps,
+                enquiries, converted, rejected, complaintsRec, complaintsRes, followUps,
                 rsPuramAdm, ramNagarAdm, chennaiAdm,
                 rsPuramDis, ramNagarDis, chennaiDis
             ] = await Promise.all([
                 axios.get(`${API_BASE_URL}/api/dashboard/previous-day-enquiries`),
                 axios.get(`${API_BASE_URL}/api/dashboard/converted-leads-yesterday`),
-                axios.get(`${API_BASE_URL}/api/dashboard/admitted-patients-yesterday`),
+                axios.get(`${API_BASE_URL}/api/dashboard/enquiries-rejected-yesterday`),
                 axios.get(`${API_BASE_URL}/api/dashboard/complaints-received-yesterday`),
                 axios.get(`${API_BASE_URL}/api/dashboard/complaints-resolved-yesterday`),
                 axios.get(`${API_BASE_URL}/api/dashboard/follow-ups-due-today`),
@@ -51,7 +51,7 @@ const Home = () => {
             setDashboardData({
                 previousDayEnquiries: enquiries.data,
                 convertedLeads: converted.data,
-                admittedPatients: admitted.data,
+                rejectedEnquiries: rejected.data,
                 complaintsReceived: complaintsRec.data,
                 complaintsResolved: complaintsRes.data,
                 followUpsDue: followUps.data,
@@ -224,12 +224,12 @@ const Home = () => {
                             color="text-green-600"
                         />
                         <DashboardCard
-                            sectionKey="admittedPatients"
+                            sectionKey="rejectedEnquiries"
                             title="Enquiries Rejected Yesterday"
                             category="ENQUIRIES"
                             description="Enquiries that were rejected yesterday. Track loss reasons and follow-up opportunities."
-                            count={dashboardData.admittedPatients.count}
-                            data={dashboardData.admittedPatients.data}
+                            count={dashboardData.rejectedEnquiries.count}
+                            data={dashboardData.rejectedEnquiries.data}
                             icon={UserPlus}
                             color="text-purple-600"
                         />
