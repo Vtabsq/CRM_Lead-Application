@@ -319,7 +319,7 @@ function App() {
           {/* Main Content Area */}
           <main className={`transition-all duration-300 ease-in-out
             ${location.pathname === '/' ? 'ml-0' : isCollapsed ? 'ml-20' : 'ml-64'} 
-            flex-1 h-screen overflow-y-auto px-6 py-8 animate-fade-in`}
+            flex-1 h-screen overflow-y-auto animate-fade-in`}
           >
             <Routes>
               {/* Home */}
