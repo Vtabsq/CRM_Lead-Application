@@ -265,7 +265,7 @@ const Home = () => {
                         />
                         <DashboardCard
                             sectionKey="rsPuramAdmissions"
-                            title="RS Puram Admission - Today"
+                            title="RS Puram Admission - Yesterday"
                             category="ADMISSIONS"
                             description="New admissions at RS Puram center today. Monitor center-specific patient intake."
                             count={dashboardData.rsPuramAdmissions.count}
@@ -275,7 +275,7 @@ const Home = () => {
                         />
                         <DashboardCard
                             sectionKey="ramNagarAdmissions"
-                            title="Ram Nagar Admission - Today"
+                            title="Ram Nagar Admission - Yesterday"
                             category="ADMISSIONS"
                             description="New admissions at Ram Nagar center today. Monitor center-specific patient intake."
                             count={dashboardData.ramNagarAdmissions.count}
@@ -285,7 +285,7 @@ const Home = () => {
                         />
                         <DashboardCard
                             sectionKey="chennaiAdmissions"
-                            title="Chennai Admission - Today"
+                            title="Chennai Admission - Yesterday"
                             category="ADMISSIONS"
                             description="New admissions at Chennai center today. Monitor center-specific patient intake."
                             count={dashboardData.chennaiAdmissions.count}
