@@ -6272,6 +6272,86 @@ Contact: {DEFAULT_SENDER_EMAIL}
         print(f"[Discharge Email] Failed to send discharge summary: {e}")
 
 
+@app.get("/email-config-check")
+async def email_config_check():
+    """
+    Check email configuration status
+    """
+    config_status = {
+        "smtp_host": SMTP_HOST,
+        "smtp_port": SMTP_PORT,
+        "smtp_username_set": bool(SMTP_USERNAME),
+        "smtp_password_set": bool(SMTP_PASSWORD),
+        "default_sender": DEFAULT_SENDER_EMAIL,
+        "email_transport": EMAIL_TRANSPORT,
+        "gmail_api_enabled": USE_GMAIL_API
+    }
+    
+    # Mask sensitive info
+    if SMTP_USERNAME:
+        config_status["smtp_username"] = SMTP_USERNAME[:3] + "***" + SMTP_USERNAME[-2:]
+    
+    return {
+        "status": "info",
+        "config": config_status,
+        "note": "For Gmail SMTP with 2FA, you must use an App Password, not your regular password"
+    }
+
+@app.get("/test-email")
+async def test_email():
+    """
+    Test endpoint to trigger an email to verify email functionality
+    """
+    try:
+        recipient_email = "harishkadhiravan.vtab@gmail.com"
+        
+        # Create test email
+        message = EmailMessage()
+        message["Subject"] = "CRM Email System Test - ✅ Success"
+        message["From"] = DEFAULT_SENDER_EMAIL
+        message["To"] = recipient_email
+        
+        email_body = """
+Hello,
+
+This is a test email to verify that the CRM email system is working correctly.
+
+If you receive this email, it means:
+- ✅ Gmail API configuration is correct
+- ✅ Email authentication is successful
+- ✅ The email sending functionality is operational
+
+This test was triggered from the CRM backend at: {}
+
+Best Regards,
+Grand World Healthcare System
+""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        
+        message.set_content(email_body)
+        
+        # Send email using Gmail API (works on Render)
+        if EMAIL_TRANSPORT == "gmail_api":
+            from gmail_api_sender import send_email_via_gmail_api
+            send_email_via_gmail_api(DEFAULT_SENDER_EMAIL, recipient_email, message["Subject"], email_body)
+        else:
+            # Fallback to SMTP (won't work on Render)
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                if SMTP_USERNAME and SMTP_PASSWORD:
+                    server.starttls()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(message)
+        
+        print(f"[Test Email] Successfully sent test email to {recipient_email}")
+        return {
+            "status": "success",
+            "message": f"Test email sent successfully to {recipient_email}"
+        }
+        
+    except Exception as e:
+        print(f"[Test Email] Failed to send test email: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send test email: {str(e)}")
+
+
 @app.get("/search_data")
 async def search_data(query: Optional[str] = Query(None, min_length=2), limit: int = 50):
     """Search for patient data for auto-fill. If query is empty, returns all data up to limit."""
