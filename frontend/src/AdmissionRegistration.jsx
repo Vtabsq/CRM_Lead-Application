@@ -1127,30 +1127,37 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                 // GENDER VALIDATION: Check if gender conflicts with existing twin room allocation
                 if (name === 'gender' && newValue) {
                     const roomType = currentItem.room_type || '';
+                    const roomNo = currentItem.room_no || '';
                     
                     // Check if this patient is in a twin room
-                    if (roomType.toLowerCase().includes('twin')) {
+                    if (roomType.toLowerCase().includes('twin') && roomNo) {
+                        // Check against already occupied beds in the same room
+                        const occupiedBedsInRoom = beds.filter(b => 
+                            b.room_no === roomNo && 
+                            b.status === 'Occupied' && 
+                            b.gender && 
+                            b.gender.toLowerCase() !== newValue.toLowerCase()
+                        );
+                        
+                        if (occupiedBedsInRoom.length > 0) {
+                            const conflictingBed = occupiedBedsInRoom[0];
+                            alert(`Gender mismatch! Room ${roomNo} already has a ${conflictingBed.gender} patient (${conflictingBed.patient_name}). Cannot place ${newValue} patient in this twin room.`);
+                            return list;
+                        }
+                        
                         // Check within current form
                         const existingTwinBedPatients = patientAdmissionList.filter((p, i) => 
                             i !== index && 
+                            p.room_no === roomNo &&
                             p.room_type && 
                             p.room_type.toLowerCase().includes('twin') && 
                             p.gender && 
                             p.gender.toLowerCase() !== newValue.toLowerCase()
                         );
                         
-                        // Check against admitted patients from backend
-                        const admittedTwinPatients = admissionRecords.filter(p => 
-                            p.room_type && 
-                            p.room_type.toLowerCase().includes('twin') && 
-                            p.gender && 
-                            p.gender.toLowerCase() !== newValue.toLowerCase()
-                        );
-                        
-                        if (existingTwinBedPatients.length > 0 || admittedTwinPatients.length > 0) {
-                            const conflictingPatient = existingTwinBedPatients[0] || admittedTwinPatients[0];
-                            alert(`Gender mismatch! Cannot place ${newValue} patient in twin room. ${conflictingPatient.gender} patient is already admitted in twin room.`);
-                            // Don't set the gender
+                        if (existingTwinBedPatients.length > 0) {
+                            const conflictingPatient = existingTwinBedPatients[0];
+                            alert(`Gender mismatch! Room ${roomNo} will have a ${conflictingPatient.gender} patient. Cannot place ${newValue} patient in this twin room.`);
                             return list;
                         }
                     }
@@ -1159,11 +1166,27 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                 // GENDER VALIDATION: Check if room type is twin and patient gender conflicts
                 if (name === 'room_type' && newValue && newValue.toLowerCase().includes('twin')) {
                     const patientGender = currentItem.gender || '';
+                    const roomNo = currentItem.room_no || '';
                     
-                    if (patientGender) {
-                        // Check if there's already a patient in a twin bed with different gender
+                    if (patientGender && roomNo) {
+                        // Check against already occupied beds in the same room
+                        const occupiedBedsInRoom = beds.filter(b => 
+                            b.room_no === roomNo && 
+                            b.status === 'Occupied' && 
+                            b.gender && 
+                            b.gender.toLowerCase() !== patientGender.toLowerCase()
+                        );
+                        
+                        if (occupiedBedsInRoom.length > 0) {
+                            const conflictingBed = occupiedBedsInRoom[0];
+                            alert(`Gender mismatch! Room ${roomNo} already has a ${conflictingBed.gender} patient (${conflictingBed.patient_name}). Cannot place ${patientGender} patient in this twin room.`);
+                            return list;
+                        }
+                        
+                        // Check within current form
                         const existingTwinBedPatients = patientAdmissionList.filter((p, i) => 
                             i !== index && 
+                            p.room_no === roomNo &&
                             p.room_type && 
                             p.room_type.toLowerCase().includes('twin') && 
                             p.gender && 
@@ -1172,8 +1195,29 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                         
                         if (existingTwinBedPatients.length > 0) {
                             const conflictingPatient = existingTwinBedPatients[0];
-                            alert(`Gender mismatch! Cannot place ${patientGender} patient in twin room. ${conflictingPatient.gender} patient is already admitted in twin room.`);
-                            // Don't set the room_type
+                            alert(`Gender mismatch! Room ${roomNo} will have a ${conflictingPatient.gender} patient. Cannot place ${patientGender} patient in this twin room.`);
+                            return list;
+                        }
+                    }
+                }
+                
+                // GENDER VALIDATION: Check if room number is selected for twin room
+                if (name === 'room_no' && newValue) {
+                    const roomType = currentItem.room_type || '';
+                    const patientGender = currentItem.gender || '';
+                    
+                    if (roomType.toLowerCase().includes('twin') && patientGender) {
+                        // Check against already occupied beds in the selected room
+                        const occupiedBedsInRoom = beds.filter(b => 
+                            b.room_no === newValue && 
+                            b.status === 'Occupied' && 
+                            b.gender && 
+                            b.gender.toLowerCase() !== patientGender.toLowerCase()
+                        );
+                        
+                        if (occupiedBedsInRoom.length > 0) {
+                            const conflictingBed = occupiedBedsInRoom[0];
+                            alert(`Gender mismatch! Room ${newValue} already has a ${conflictingBed.gender} patient (${conflictingBed.patient_name}). Cannot allocate ${patientGender} patient to this twin room.`);
                             return list;
                         }
                     }
