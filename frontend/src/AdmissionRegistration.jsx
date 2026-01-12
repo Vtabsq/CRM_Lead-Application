@@ -1124,6 +1124,61 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                     currentItem.age = age.toString();
                 }
 
+                // GENDER VALIDATION: Check if gender conflicts with existing twin room allocation
+                if (name === 'gender' && newValue) {
+                    const roomType = currentItem.room_type || '';
+                    
+                    // Check if this patient is in a twin room
+                    if (roomType.toLowerCase().includes('twin')) {
+                        // Check within current form
+                        const existingTwinBedPatients = patientAdmissionList.filter((p, i) => 
+                            i !== index && 
+                            p.room_type && 
+                            p.room_type.toLowerCase().includes('twin') && 
+                            p.gender && 
+                            p.gender.toLowerCase() !== newValue.toLowerCase()
+                        );
+                        
+                        // Check against admitted patients from backend
+                        const admittedTwinPatients = admissionRecords.filter(p => 
+                            p.room_type && 
+                            p.room_type.toLowerCase().includes('twin') && 
+                            p.gender && 
+                            p.gender.toLowerCase() !== newValue.toLowerCase()
+                        );
+                        
+                        if (existingTwinBedPatients.length > 0 || admittedTwinPatients.length > 0) {
+                            const conflictingPatient = existingTwinBedPatients[0] || admittedTwinPatients[0];
+                            alert(`Gender mismatch! Cannot place ${newValue} patient in twin room. ${conflictingPatient.gender} patient is already admitted in twin room.`);
+                            // Don't set the gender
+                            return list;
+                        }
+                    }
+                }
+
+                // GENDER VALIDATION: Check if room type is twin and patient gender conflicts
+                if (name === 'room_type' && newValue && newValue.toLowerCase().includes('twin')) {
+                    const patientGender = currentItem.gender || '';
+                    
+                    if (patientGender) {
+                        // Check if there's already a patient in a twin bed with different gender
+                        const existingTwinBedPatients = patientAdmissionList.filter((p, i) => 
+                            i !== index && 
+                            p.room_type && 
+                            p.room_type.toLowerCase().includes('twin') && 
+                            p.gender && 
+                            p.gender.toLowerCase() !== patientGender.toLowerCase()
+                        );
+                        
+                        if (existingTwinBedPatients.length > 0) {
+                            const conflictingPatient = existingTwinBedPatients[0];
+                            alert(`Gender mismatch! Cannot place ${patientGender} patient in twin room. ${conflictingPatient.gender} patient is already admitted in twin room.`);
+                            // Don't set the room_type
+                            return list;
+                        }
+                    }
+                }
+
                 // Cascading Location Logic
                 if (name === 'state') {
                     currentItem.district = '';
@@ -1323,31 +1378,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                     if (/^\d{1,3}$/.test(v) && Number(v) > 0 && Number(v) < 120 && v.length < 4 && !foundAge) foundAge = v;
                 });
 
-                // GENDER VALIDATION: Check if room is twin bed and has gender restriction
-                const roomType = currentItem.room_type || '';
-                const bedId = currentItem.bed_id || '';
                 
-                if (roomType.toLowerCase().includes('twin') && bedId) {
-                    // Find the bed to check existing gender restriction
-                    const bed = beds.find(b => b.bed_id === bedId);
-                    if (bed && bed.gender_restriction && bed.gender_restriction !== 'None') {
-                        // If we found a gender for the selected patient
-                        if (foundGender) {
-                            const patientGender = foundGender.toLowerCase();
-                            const restrictedGender = bed.gender_restriction.toLowerCase();
-                            
-                            if (patientGender !== restrictedGender) {
-                                alert(`Gender mismatch! This twin bed room is restricted to ${bed.gender_restriction} patients only. Selected patient is ${foundGender}.`);
-                                return list; // Don't update the patient data
-                            }
-                        } else {
-                            // If no gender found, show warning
-                            alert(`Cannot auto-fill: This twin bed room requires ${bed.gender_restriction} patients, but the selected patient's gender is not specified.`);
-                            return list; // Don't update the patient data
-                        }
-                    }
-                }
-
                 const nameParts = (foundPatientName || 'Unknown').split(' ');
                 const firstName = nameParts[0] || '';
                 const lastName = nameParts.slice(1).join(' ') || '';
