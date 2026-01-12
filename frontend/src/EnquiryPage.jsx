@@ -289,8 +289,9 @@ const EnquiryPage = () => {
 
         let nextValue = isDateFieldNameGlobal(lower) ? parseDateToISO(value) : value;
 
-        // Auto-capitalize first character for text inputs
-        if (typeof nextValue === 'string' && nextValue.length > 0 && !isDateFieldNameGlobal(lower)) {
+        // Auto-capitalize first character for text inputs (skip emails)
+        const isEmailField = lower.includes('email');
+        if (typeof nextValue === 'string' && nextValue.length > 0 && !isDateFieldNameGlobal(lower) && !isEmailField) {
             nextValue = nextValue.charAt(0).toUpperCase() + nextValue.slice(1);
         }
 
