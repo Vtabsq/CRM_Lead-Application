@@ -635,6 +635,88 @@ def send_follow_email(recipient: str, member_entry: Dict[str, Any], query_trigge
 
 
 
+def send_admission_confirmation_email(recipient: str, admission_data: Dict[str, Any]) -> None:
+    """
+    Send admission confirmation email to patient/family
+    """
+    if not recipient or not admission_data:
+        print("[Admission Email] Missing recipient or data, skipping email")
+        return
+    
+    patient_name = admission_data.get('patient_name', '')
+    patient_last_name = admission_data.get('patient_last_name', '')
+    full_name = f"{patient_name} {patient_last_name}".strip()
+    member_id = admission_data.get('member_id', '')
+    room_type = admission_data.get('room_type', '')
+    check_in_date = admission_data.get('check_in_date', '')
+    hospital_location = admission_data.get('hospital_location', '')
+    
+    # Format the check-in date
+    if check_in_date:
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(check_in_date, '%Y-%m-%d')
+            check_in_date = date_obj.strftime('%d-%m-%Y')
+        except:
+            pass
+    
+    # Create email content
+    subject = f"Admission Confirmation - {full_name} ({member_id})"
+    
+    email_body = f"""
+Dear {full_name} and Family,
+
+We are pleased to confirm the successful admission of the patient with the following details:
+
+PATIENT ADMISSION CONFIRMATION
+==============================
+
+Patient Name: {full_name}
+Member ID: {member_id}
+Room Type: {room_type}
+Check-In Date: {check_in_date}
+Hospital Location: {hospital_location}
+
+Your admission has been processed and all necessary arrangements have been made. Our medical team will provide the best possible care during your stay.
+
+IMPORTANT INFORMATION:
+- Please ensure all personal belongings are securely stored
+- Medications will be administered as per doctor's prescription
+- Visiting hours: 10:00 AM - 12:00 PM and 5:00 PM - 7:00 PM
+- For any emergencies, please contact the reception immediately
+
+For any queries or assistance, please feel free to contact our hospital administration.
+
+Wishing you a speedy recovery!
+
+Best Regards,
+Hospital Administration Team
+Grand World Healthcare
+Contact: {DEFAULT_SENDER_EMAIL}
+"""
+    
+    try:
+        if EMAIL_TRANSPORT == "gmail_api":
+            from gmail_api_sender import send_email_via_gmail_api
+            send_email_via_gmail_api(recipient, email_body, subject)
+        else:
+            message = EmailMessage()
+            message["Subject"] = subject
+            message["From"] = DEFAULT_SENDER_EMAIL
+            message["To"] = recipient
+            message.set_content(email_body)
+            
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                if SMTP_USERNAME and SMTP_PASSWORD:
+                    server.starttls()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(message)
+        
+        print(f"[Admission Email] Successfully sent admission confirmation to {recipient}")
+    except Exception as e:
+        print(f"[Admission Email] Failed to send admission confirmation: {e}")
+
+
 def extract_recipient_email(payload: Dict[str, Any]) -> Optional[str]:
     if not payload:
         return None
@@ -3419,7 +3501,7 @@ If you need assistance, please contact us.
 # --- NEW: Secondary Google Sheet Endpoint ---
 
 @app.post("/patient-admission/save")
-async def save_patient_admission(payload: Dict[str, Any] = Body(...)):
+async def save_patient_admission(payload: Dict[str, Any] = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     """
     Save Patient Admission data to the SECONDARY Google Sheet.
     Supports both single object (legacy) and "rows" array (multi-patient).
@@ -3459,6 +3541,23 @@ async def save_patient_admission(payload: Dict[str, Any] = Body(...)):
                     res['lead_sync'] = f"failed: {str(lead_err)}"
 
                 results.append({"status": "success", "row_index": i, "details": res})
+                
+                # Extract recipient email and send admission confirmation email
+                recipient_email = extract_recipient_email(row)
+                if recipient_email:
+                    # Prepare admission email data
+                    admission_data = {
+                        'patient_name': row.get('patient_name', ''),
+                        'patient_last_name': row.get('patient_last_name', ''),
+                        'member_id': row.get('member_id', ''),
+                        'room_type': row.get('room_type', ''),
+                        'check_in_date': row.get('check_in_date', ''),
+                        'hospital_location': row.get('hospital_location', ''),
+                        'email_id': recipient_email
+                    }
+                    background_tasks.add_task(send_admission_confirmation_email, recipient_email, admission_data)
+                    print(f"[Patient Admission Save] Email queued for: {recipient_email}")
+                
             except Exception as e:
                 print(f"[Patient Admission Save] Error on Row {i}: {e}")
                 results.append({"status": "error", "row_index": i, "error": str(e)})
@@ -5936,6 +6035,242 @@ async def generate_discharge_summary(payload: dict):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/send-discharge-summary-email")
+async def send_discharge_summary_email(payload: dict, background_tasks: BackgroundTasks = BackgroundTasks()):
+    """
+    Generate discharge summary PDF and send it via email to the patient
+    """
+    try:
+        patient = payload.get("patient_data", {})
+        totals = payload.get("totals", {})
+        billing_data = payload.get("billing_data", {})
+        days = payload.get("calculated_days", 1)
+        recipient_email = payload.get("recipient_email")
+        
+        if not patient or not totals:
+            raise Exception("Missing patient or billing data")
+        
+        if not recipient_email:
+            raise Exception("Recipient email is required")
+        
+        # Generate PDF buffer (reuse existing logic)
+        buffer = io.BytesIO()
+        
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.colors import HexColor, black, white, lightgrey
+        from reportlab.lib.units import mm
+        from reportlab.lib.utils import ImageReader
+        
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+        
+        # Colors
+        primary_green = HexColor("#2E7D32")
+        dark_gray = HexColor("#333333")
+        light_gray = HexColor("#666666")
+        border_gray = HexColor("#E0E0E0")
+        bg_light = HexColor("#F5F5F5")
+        section_bg = HexColor("#F8F9FA")
+        
+        # Logo path
+        logo_path = os.path.join(os.path.dirname(__file__), "Gw- Logo new (2) (1).png")
+        
+        # Page settings
+        header_height = 100
+        footer_height = 50
+        margin_left = 40
+        margin_right = 40
+        content_width = width - margin_left - margin_right
+        
+        # Track current page
+        page_num = [1]
+        
+        # Helper function to get patient value with multiple key attempts
+        def get_patient_val(keys):
+            if isinstance(keys, str):
+                keys = [keys]
+            for key in keys:
+                val = patient.get(key)
+                if val:
+                    return str(val)
+            return ""
+        
+        # Draw header
+        c.setFillColor(primary_green)
+        c.rect(0, height - header_height, width, header_height, fill=1)
+        
+        # Add logo if exists
+        if os.path.exists(logo_path):
+            try:
+                logo = ImageReader(logo_path)
+                c.drawImage(logo, margin_left, height - header_height + 20, width=60, height=60, mask='auto')
+            except:
+                pass
+        
+        # Hospital name and header text
+        c.setFillColor(white)
+        c.setFont("Helvetica-Bold", 24)
+        c.drawString(120, height - 40, "Grand World Healthcare")
+        c.setFont("Helvetica-Bold", 18)
+        c.drawString(120, height - 70, "Discharge Summary")
+        
+        # Patient information section
+        y_position = height - header_height - 30
+        c.setFillColor(black)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(margin_left, y_position, "Patient Information")
+        
+        y_position -= 25
+        c.setFont("Helvetica", 11)
+        
+        # Patient details
+        patient_info = [
+            ("Name", get_patient_val(["patientname", "name", "patient_name"])),
+            ("Member ID", get_patient_val(["memberidkey", "memberid", "id"])),
+            ("Age", get_patient_val(["age"])),
+            ("Gender", get_patient_val(["gender", "sex"])),
+            ("Blood Group", get_patient_val(["bloodgroup", "blood"])),
+            ("Admission Date", get_patient_val(["checkindate", "admissiondate", "date"])),
+            ("Discharge Date", get_patient_val(["checkoutdate", "dischargedate", "checkout"])),
+            ("Room Type", get_patient_val(["roomtype", "room", "bedcategory"])),
+            ("Attender Name", get_patient_val(["attendername", "emergencyname", "relationalname"]))
+        ]
+        
+        for label, value in patient_info:
+            if value:
+                c.drawString(margin_left, y_position, f"{label}: {value}")
+                y_position -= 18
+                if y_position < 150:  # Need new page
+                    c.showPage()
+                    y_position = height - 50
+                    page_num[0] += 1
+        
+        # Billing details section
+        y_position -= 20
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(margin_left, y_position, "Billing Details")
+        
+        y_position -= 25
+        c.setFont("Helvetica", 11)
+        
+        billing_info = [
+            ("Total Days", str(days)),
+            ("Room Charge", f"₹{totals.get('room', 0):,.2f}"),
+            ("Bed Charge", f"₹{totals.get('bed', 0):,.2f}"),
+            ("Nurse Fee", f"₹{totals.get('nurse', 0):,.2f}"),
+            ("Additional Nurse Fee", f"₹{totals.get('additional_nurse', 0):,.2f}"),
+            ("Other Charges", f"₹{totals.get('other_charges', 0):,.2f}"),
+            ("Hospital Fee", f"₹{totals.get('hospital', 0):,.2f}"),
+            ("Doctor Fee", f"₹{totals.get('doctor', 0):,.2f}"),
+            ("Service Charge", f"₹{totals.get('service', 0):,.2f}"),
+            ("Discount", f"₹{totals.get('discount', 0):,.2f}")
+        ]
+        
+        for label, value in billing_info:
+            c.drawString(margin_left, y_position, f"{label}: {value}")
+            y_position -= 18
+            if y_position < 150:  # Need new page
+                c.showPage()
+                y_position = height - 50
+                page_num[0] += 1
+        
+        # Grand total
+        y_position -= 10
+        c.setFont("Helvetica-Bold", 12)
+        c.setFillColor(primary_green)
+        c.drawString(margin_left, y_position, f"Grand Total: ₹{totals.get('grand', 0):,.2f}")
+        
+        # Footer
+        c.setFillColor(lightgrey)
+        c.rect(0, 0, width, footer_height, fill=1)
+        c.setFillColor(black)
+        c.setFont("Helvetica", 9)
+        c.drawString(margin_left, 20, "Grand World Healthcare | Contact: info@grandworld.com | 24/7 Emergency: +91-XXX-XXX-XXXX")
+        c.drawRightString(width - margin_right, 20, f"Page {page_num[0]}")
+        
+        # Save PDF
+        c.save()
+        buffer.seek(0)
+        
+        # Send email with PDF attachment
+        background_tasks.add_task(
+            send_email_with_pdf_attachment,
+            recipient_email,
+            buffer.getvalue(),
+            get_patient_val(["patientname", "name", "patient_name"]),
+            get_patient_val(["memberidkey", "memberid", "id"])
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Discharge summary will be sent to {recipient_email}"
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def send_email_with_pdf_attachment(recipient: str, pdf_bytes: bytes, patient_name: str, member_id: str) -> None:
+    """
+    Send email with PDF attachment
+    """
+    try:
+        # Create email message
+        message = EmailMessage()
+        message["Subject"] = f"Discharge Summary - {patient_name} ({member_id})"
+        message["From"] = DEFAULT_SENDER_EMAIL
+        message["To"] = recipient
+        
+        # Email body
+        email_body = f"""
+Dear {patient_name} and Family,
+
+Please find attached the discharge summary for your recent stay at Grand World Healthcare.
+
+The discharge summary includes:
+- Patient information and admission details
+- Complete billing breakdown
+- Final amount details
+
+If you have any questions regarding the discharge summary or need any clarifications, please don't hesitate to contact our billing department.
+
+Wishing you a speedy recovery!
+
+Best Regards,
+Grand World Healthcare Team
+Contact: {DEFAULT_SENDER_EMAIL}
+"""
+        
+        message.set_content(email_body)
+        
+        # Attach PDF
+        message.add_attachment(
+            pdf_bytes,
+            maintype="application",
+            subtype="pdf",
+            filename=f"Discharge_Summary_{member_id}.pdf"
+        )
+        
+        # Send email
+        if EMAIL_TRANSPORT == "gmail_api":
+            from gmail_api_sender import send_email_via_gmail_api
+            # Convert EmailMessage to string for gmail_api_sender
+            send_email_via_gmail_api(recipient, email_body, message["Subject"], pdf_bytes)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                if SMTP_USERNAME and SMTP_PASSWORD:
+                    server.starttls()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(message)
+        
+        print(f"[Discharge Email] Successfully sent discharge summary to {recipient}")
+    except Exception as e:
+        print(f"[Discharge Email] Failed to send discharge summary: {e}")
+
 
 @app.get("/search_data")
 async def search_data(query: Optional[str] = Query(None, min_length=2), limit: int = 50):

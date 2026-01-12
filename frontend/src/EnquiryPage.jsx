@@ -450,13 +450,21 @@ const EnquiryPage = () => {
         }
     };
 
-    const totalPages = Math.ceil(fields.length / FIELDS_PER_PAGE);
+    const totalPages = COMPLAINTS_PAGE_INDEX + 1;
     const startIndex = currentPage * FIELDS_PER_PAGE;
     const endIndex = startIndex + FIELDS_PER_PAGE;
-    const currentFields = fields.slice(startIndex, endIndex);
+    const currentFields = currentPage === COMPLAINTS_PAGE_INDEX ? [] : fields.slice(startIndex, endIndex);
 
-    const goToNextPage = () => { if (currentPage < totalPages - 1) setCurrentPage(p => p + 1); };
-    const goToPreviousPage = () => { if (currentPage > 0) setCurrentPage(p => p - 1); };
+    const goToNextPage = () => {
+        if (currentPage < totalPages - 1) {
+            setCurrentPage(p => p + 1);
+        }
+    };
+    const goToPreviousPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage(p => p - 1);
+        }
+    };
 
     const viewSheet = async () => {
         if (sheetUrl) {

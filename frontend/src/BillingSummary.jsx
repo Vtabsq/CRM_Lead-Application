@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { Search, FileDown, Calculator, User, Calendar, IndianRupee, Activity, AlertCircle, Save, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Search, FileDown, Calculator, User, Calendar, IndianRupee, Activity, AlertCircle, Save, CheckCircle2, ChevronDown, Mail } from 'lucide-react';
 
 const normalize_header = (h) => {
     return str(h).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
@@ -57,6 +57,10 @@ const BillingSummary = () => {
 
     // Saving State
     const [saving, setSaving] = useState(false);
+    
+    // Email Sending State
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const [emailSuccess, setEmailSuccess] = useState('');
 
     // --- 1. Initial Fetch (Patients & Charges) ---
     useEffect(() => {
@@ -330,9 +334,47 @@ const BillingSummary = () => {
         link.href = url;
         link.download = `Discharge_${selectedMemberId}.pdf`;
         link.click();
+        window.URL.revokeObjectURL(url);
     };
 
-    // UI Components Helpers
+    const handleSendEmail = async () => {
+        if (!selectedMemberId || !patientData) return;
+        
+        // Check if patient has email
+        const patientEmail = patientData.email_id || patientData.email;
+        if (!patientEmail) {
+            setError("Patient email address not found. Cannot send email.");
+            return;
+        }
+
+        try {
+            setSendingEmail(true);
+            setError('');
+            setEmailSuccess('');
+
+            const payload = {
+                patient_data: patientData,
+                billing_data: billingInputs,
+                totals: totals,
+                calculated_days: calculatedDays,
+                recipient_email: patientEmail
+            };
+
+            await axios.post(
+                `${API_BASE_URL}/send-discharge-summary-email`,
+                payload
+            );
+
+            setEmailSuccess(`Discharge summary sent successfully to ${patientEmail}`);
+            setTimeout(() => setEmailSuccess(''), 5000);
+        } catch (err) {
+            console.error("Failed to send email:", err);
+            setError(err.response?.data?.detail || "Failed to send email. Please try again.");
+        } finally {
+            setSendingEmail(false);
+        }
+    };
+
     const DetailItem = ({ label, keys }) => (
         <div>
             <span className="text-xs font-bold text-gray-400 uppercase block">{label}</span>
@@ -340,6 +382,7 @@ const BillingSummary = () => {
         </div>
     );
 
+// ... (rest of the code remains the same)
     return (
         <div className="flex flex-col h-full bg-gray-50 p-6 overflow-hidden">
             {/* Header */}
@@ -484,7 +527,7 @@ const BillingSummary = () => {
                                 <span className="text-3xl font-extrabold text-blue-700">₹{totals.grand.toLocaleString()}</span>
                             </div>
 
-                            <div className="grid grid-cols-1">
+                            <div className="grid grid-cols-1 gap-2">
                                 <button
                                     onClick={handleDownloadPdf}
                                     disabled={!selectedMemberId}
@@ -492,6 +535,18 @@ const BillingSummary = () => {
                                 >
                                     <FileDown className="w-4 h-4" /> Download Discharge Summary
                                 </button>
+                                <button
+                                    onClick={handleSendEmail}
+                                    disabled={!selectedMemberId || sendingEmail}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg flex justify-center items-center gap-2 shadow md:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full"
+                                >
+                                    <Mail className="w-4 h-4" /> {sendingEmail ? 'Sending...' : 'Send Email'}
+                                </button>
+                                {emailSuccess && (
+                                    <div className="text-green-600 text-sm font-medium text-center bg-green-50 p-2 rounded">
+                                        {emailSuccess}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
