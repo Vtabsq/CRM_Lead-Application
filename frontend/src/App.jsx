@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { User, XCircle, Loader2, ShieldCheck, Lock, Activity, CheckCircle2 } from 'lucide-react';
@@ -59,13 +59,30 @@ const LOGIN_FEATURES = [
 ];
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginUser, setLoginUser] = useState('');
+  // Initialize state from localStorage if available
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+  const [loginUser, setLoginUser] = useState(() => {
+    return localStorage.getItem('loginUser') || '';
+  });
   const [loginPass, setLoginPass] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+
+  // Save authentication state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('isAuthenticated', isAuthenticated.toString());
+  }, [isAuthenticated]);
+
+  // Save username to localStorage whenever it changes
+  useEffect(() => {
+    if (loginUser) {
+      localStorage.setItem('loginUser', loginUser);
+    }
+  }, [loginUser]);
 
   const todayDisplay = useMemo(() => {
     return new Date().toLocaleDateString('en-IN', {
@@ -116,6 +133,9 @@ function App() {
     setLoginUser('');
     setLoginPass('');
     setLoginError('');
+    // Clear localStorage on logout
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('loginUser');
   };
 
   // Render Login Screen if not authenticated
