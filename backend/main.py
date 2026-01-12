@@ -4320,6 +4320,7 @@ async def allocate_bed(payload: BedAllocationRequest):
         # Find indices
         try:
             room_no_idx = headers.index("room no")
+            room_type_idx = headers.index("room type")
             bed_index_idx = headers.index("bed index")
             status_idx = headers.index("status")
             patient_idx = headers.index("patient name")
@@ -4332,6 +4333,7 @@ async def allocate_bed(payload: BedAllocationRequest):
             raise HTTPException(status_code=500, detail=f"Sheet headers missing: {e}")
 
         target_row_num = -1
+        target_room_type = None
         
         # Search for the bed row (skip header)
         for i, row in enumerate(rows[1:], start=2):
@@ -4344,6 +4346,7 @@ async def allocate_bed(payload: BedAllocationRequest):
             
             if r_no == str(payload.room_no) and b_idx == str(payload.bed_index):
                 target_row_num = i
+                target_room_type = str(row[room_type_idx]).strip() if len(row) > room_type_idx else ""
                 # Check status
                 if len(row) > status_idx and row[status_idx] == "Occupied":
                     raise HTTPException(status_code=400, detail="Bed already occupied")
@@ -4351,6 +4354,31 @@ async def allocate_bed(payload: BedAllocationRequest):
         
         if target_row_num == -1:
              raise HTTPException(status_code=404, detail="Bed not found in system")
+        
+        # GENDER VALIDATION: Check if room is twin and has gender conflict
+        if target_room_type and "twin" in target_room_type.lower():
+            patient_gender = payload.gender.strip().lower() if payload.gender else ""
+            
+            if patient_gender:
+                # Check all beds in the same room for occupied beds with different gender
+                for i, row in enumerate(rows[1:], start=2):
+                    if len(row) <= max(room_no_idx, status_idx, gender_idx):
+                        continue
+                    
+                    r_no = str(row[room_no_idx]).strip()
+                    status = str(row[status_idx]).strip() if len(row) > status_idx else ""
+                    existing_gender = str(row[gender_idx]).strip().lower() if len(row) > gender_idx else ""
+                    existing_patient = str(row[patient_idx]).strip() if len(row) > patient_idx else ""
+                    
+                    # Check if this is the same room, occupied, and has a different gender
+                    if (r_no == str(payload.room_no) and 
+                        status == "Occupied" and 
+                        existing_gender and 
+                        existing_gender != patient_gender):
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"Gender mismatch! Room {payload.room_no} already has a {existing_gender.title()} patient ({existing_patient}). Cannot allocate {payload.gender} patient to this twin room."
+                        )
 
         # Update the row
         # gspread uses 1-based indexing for columns
