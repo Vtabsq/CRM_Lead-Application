@@ -6286,8 +6286,14 @@ Contact: {DEFAULT_SENDER_EMAIL}
         # Send email
         if EMAIL_TRANSPORT == "gmail_api":
             from gmail_api_sender import send_email_via_gmail_api
-            # Convert EmailMessage to string for gmail_api_sender
-            send_email_via_gmail_api(recipient, email_body, message["Subject"], pdf_bytes)
+            # Send email with PDF attachment
+            send_email_via_gmail_api(
+                sender_email=DEFAULT_SENDER_EMAIL,
+                recipient_email=recipient,
+                subject=message["Subject"],
+                body_text=email_body,
+                pdf_bytes=pdf_bytes
+            )
         else:
             with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
                 if SMTP_USERNAME and SMTP_PASSWORD:
