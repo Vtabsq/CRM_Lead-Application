@@ -233,7 +233,6 @@ const BedManagement = () => {
 
         let foundName = '';
         let foundGender = '';
-        let foundEmail = '';
         let foundPain = '';
 
         // Regex helpers
@@ -246,7 +245,6 @@ const BedManagement = () => {
         for (const v of rowVals) {
             if (!v) continue;
             if (!foundGender && genderRegex.test(v)) foundGender = v;
-            if (!foundEmail && emailRegex.test(v)) foundEmail = v;
         }
 
         // 2. Identify Name using header-based approach
@@ -262,80 +260,38 @@ const BedManagement = () => {
         }
 
         // Fallback: If header-based detection failed, use heuristic
-        if (name === 'Unknown') {
+        if (!foundName) {
             for (const v of rowVals) {
-                if (v === id) continue;
-                // Avoid dates, emails, gender, etc
-                if (/male|active|inactive|good|bad|interested/i.test(v)) continue;
-                if (/\d/.test(v)) continue; // skip numbers
-                if (/@/.test(v)) continue; // skip emails
+                if (!v) continue;
+                if (idRegex.test(v)) continue;
+                if (genderRegex.test(v)) continue;
+                if (emailRegex.test(v)) continue;
+                if (/\d/.test(v)) continue; // Name usually no digits
+                if (/active|inactive|good|bad|interested/i.test(v)) continue; // Status keywords
 
-                if (nameRegex.test(v)) {
-                    name = v;
-                    break;
+                if (!foundName) {
+                    foundName = v;
+                    continue; // Found name, keep looking for Pain Point
                 }
-            }
-        }
 
-        if (!id) return null; // Must have ID
-        if (occupiedMemberIds.has(id)) return null;
-
-        return { id, name, key: i, original: row };
-    }).filter(item => item !== null);
-}, [patients, occupiedMemberIds, patientHeaders]);
-
-    const handleMemberIdSelect = (e) => {
-        const val = e.target.value;
-        setFormData(prev => ({ ...prev, member_id: val }));
-
-        if (!val || !availablePatientOptions.length) return;
-
-        const selectedOption = availablePatientOptions.find(opt => opt.id === val);
-        if (!selectedOption) return;
-
-        const row = selectedOption.original;
-
-        // Smart Parse
-        let rowVals = [];
-        let foundName = '';
-        let foundGender = '';
-        let foundEmail = '';
-        let foundPain = '';
-
-        if (Array.isArray(row)) {
-            const { nameIdx, genderIdx, emailIdx, painIdx } = headerIndices;
-            if (nameIdx !== -1) foundName = row[nameIdx];
-            if (genderIdx !== -1) foundGender = row[genderIdx];
-            if (emailIdx !== -1) foundEmail = row[emailIdx];
-            if (painIdx !== -1) foundPain = row[painIdx];
-        } else if (typeof row === 'object') {
-            const keys = Object.keys(row);
-            const nameKey = keys.find(k => /^patient.*name|^name$/i.test(k));
-            const genderKey = keys.find(k => /gender|sex/i.test(k));
-            const emailKey = keys.find(k => /email/i.test(k));
-            const painKey = keys.find(k => /pain|diagnosis|condition/i.test(k));
-            
-            if (nameKey) foundName = row[nameKey];
-            if (genderKey) foundGender = row[genderKey];
-            if (emailKey) foundEmail = row[emailKey];
-            if (painKey) foundPain = row[painKey];
-        }
-
-        // Fallback keyword search for pain point
-        if (!foundPain && Array.isArray(row)) {
-            for (const v of row) {
-                if (typeof v !== 'string') continue;
+                // 3. Identify Pain Point (Subsequent text field?)
+                // Heuristic: If we found name, the NEXT significant text field might be Pain Point / Service.
+                // Or maybe column keywords if we had them, but we don't trust indices.
+                // Let's look for known service keywords.
                 if (!foundPain && /care|therapy|nursing|living|checkup|consultation|emergency|diagnosis/i.test(v)) {
                     foundPain = v;
                 }
             }
         }
 
+        // Fallback for Pain Point if no keyword match: take longest remaining text? 
+        // Or just the one after City/Location? Hard to say. 
+        // Let's trust the keyword match first.
+
         setFormData(prev => ({
             ...prev,
             patient_name: foundName || selectedOption.name || '',
             gender: foundGender || prev.gender,
-            email_id: foundEmail || '',
             pain_point: foundPain || ''
         }));
     };
