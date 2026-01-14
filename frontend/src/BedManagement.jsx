@@ -281,8 +281,8 @@ const BedManagement = () => {
         if (occupiedMemberIds.has(id)) return null;
 
         return { id, name, key: i, original: row };
-        }).filter(item => item !== null);
-    }, [patients, occupiedMemberIds, patientHeaders]);
+    }).filter(item => item !== null);
+}, [patients, occupiedMemberIds, patientHeaders]);
 
     const handleMemberIdSelect = (e) => {
         const val = e.target.value;
