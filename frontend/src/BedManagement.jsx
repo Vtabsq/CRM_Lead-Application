@@ -21,7 +21,8 @@ const BedManagement = () => {
         admission_date: new Date().toISOString().split('T')[0],
         discharge_date: '',
         pain_point: '',
-        room_type: 'Single'
+        room_type: 'Single',
+        email_id: ''
     });
 
     // Complaint & Feedback State
@@ -259,38 +260,80 @@ const BedManagement = () => {
         }
 
         // Fallback: If header-based detection failed, use heuristic
-        if (!foundName) {
+        if (name === 'Unknown') {
             for (const v of rowVals) {
-                if (!v) continue;
-                if (idRegex.test(v)) continue;
-                if (genderRegex.test(v)) continue;
-                if (emailRegex.test(v)) continue;
-                if (/\d/.test(v)) continue; // Name usually no digits
-                if (/active|inactive|good|bad|interested/i.test(v)) continue; // Status keywords
+                if (v === id) continue;
+                // Avoid dates, emails, gender, etc
+                if (/male|active|inactive|good|bad|interested/i.test(v)) continue;
+                if (/\d/.test(v)) continue; // skip numbers
+                if (/@/.test(v)) continue; // skip emails
 
-                if (!foundName) {
-                    foundName = v;
-                    continue; // Found name, keep looking for Pain Point
+                if (nameRegex.test(v)) {
+                    name = v;
+                    break;
                 }
+            }
+        }
 
-                // 3. Identify Pain Point (Subsequent text field?)
-                // Heuristic: If we found name, the NEXT significant text field might be Pain Point / Service.
-                // Or maybe column keywords if we had them, but we don't trust indices.
-                // Let's look for known service keywords.
+        if (!id) return null; // Must have ID
+        if (occupiedMemberIds.has(id)) return null;
+
+        return { id, name, key: i, original: row };
+    }).filter(item => item !== null);
+}, [patients, occupiedMemberIds, patientHeaders]);
+
+    const handleMemberIdSelect = (e) => {
+        const val = e.target.value;
+        setFormData(prev => ({ ...prev, member_id: val }));
+
+        if (!val || !availablePatientOptions.length) return;
+
+        const selectedOption = availablePatientOptions.find(opt => opt.id === val);
+        if (!selectedOption) return;
+
+        const row = selectedOption.original;
+
+        // Smart Parse
+        let rowVals = [];
+        let foundName = '';
+        let foundGender = '';
+        let foundEmail = '';
+        let foundPain = '';
+
+        if (Array.isArray(row)) {
+            const { nameIdx, genderIdx, emailIdx, painIdx } = headerIndices;
+            if (nameIdx !== -1) foundName = row[nameIdx];
+            if (genderIdx !== -1) foundGender = row[genderIdx];
+            if (emailIdx !== -1) foundEmail = row[emailIdx];
+            if (painIdx !== -1) foundPain = row[painIdx];
+        } else if (typeof row === 'object') {
+            const keys = Object.keys(row);
+            const nameKey = keys.find(k => /^patient.*name|^name$/i.test(k));
+            const genderKey = keys.find(k => /gender|sex/i.test(k));
+            const emailKey = keys.find(k => /email/i.test(k));
+            const painKey = keys.find(k => /pain|diagnosis|condition/i.test(k));
+            
+            if (nameKey) foundName = row[nameKey];
+            if (genderKey) foundGender = row[genderKey];
+            if (emailKey) foundEmail = row[emailKey];
+            if (painKey) foundPain = row[painKey];
+        }
+
+        // Fallback keyword search for pain point
+        if (!foundPain && Array.isArray(row)) {
+            for (const v of row) {
+                if (typeof v !== 'string') continue;
                 if (!foundPain && /care|therapy|nursing|living|checkup|consultation|emergency|diagnosis/i.test(v)) {
                     foundPain = v;
                 }
             }
         }
 
-        // Fallback for Pain Point if no keyword match: take longest remaining text? 
-        // Or just the one after City/Location? Hard to say. 
-        // Let's trust the keyword match first.
-
         setFormData(prev => ({
             ...prev,
             patient_name: foundName || selectedOption.name || '',
             gender: foundGender || prev.gender,
+            email_id: foundEmail || '',
             pain_point: foundPain || ''
         }));
     };
@@ -599,6 +642,19 @@ const BedManagement = () => {
                                     onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })}
                                     required
                                 />
+                            </div>
+
+                            {/* Email Field */}
+                            <div>
+                                <label className="block text-base font-semibold text-gray-700 mb-1">Email Address (Optional)</label>
+                                <input
+                                    type="email"
+                                    className="w-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="patient@example.com"
+                                    value={formData.email_id}
+                                    onChange={(e) => setFormData({ ...formData, email_id: e.target.value })}
+                                />
+                                <p className="text-sm text-gray-500 mt-1">Room allocation confirmation will be sent to this email</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">

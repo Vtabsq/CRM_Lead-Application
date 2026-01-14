@@ -241,7 +241,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 EMAIL_SUBJECT = os.getenv("EMAIL_SUBJECT", "New CRM Lead Submission")
-EMAIL_TRANSPORT = os.getenv("EMAIL_TRANSPORT", "smtp").strip().lower()
+EMAIL_TRANSPORT = os.getenv("EMAIL_TRANSPORT", "gmail_api").strip().lower()
 
 USE_GMAIL_API = False
 if EMAIL_TRANSPORT == "gmail_api":
@@ -635,6 +635,108 @@ def send_follow_email(recipient: str, member_entry: Dict[str, Any], query_trigge
 
 
 
+def send_room_allocation_email(recipient: str, allocation_data: Dict[str, Any]) -> None:
+    """
+    Send room allocation confirmation email to patient/family
+    """
+    if not recipient or not allocation_data:
+        print("[Room Allocation Email] Missing recipient or data, skipping email")
+        return
+    
+    patient_name = allocation_data.get('patient_name', '')
+    member_id = allocation_data.get('member_id', '')
+    room_no = allocation_data.get('room_no', '')
+    room_type = allocation_data.get('room_type', '')
+    bed_index = allocation_data.get('bed_index', '')
+    admission_date = allocation_data.get('admission_date', '')
+    gender = allocation_data.get('gender', '')
+    pain_point = allocation_data.get('pain_point', '')
+    
+    # Format the admission date
+    if admission_date:
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(admission_date, '%Y-%m-%d')
+            admission_date = date_obj.strftime('%d-%m-%Y')
+        except:
+            pass
+    
+    # Create email content
+    subject = f"Room Allocation Confirmation - {patient_name} ({member_id})"
+    
+    email_body = f"""
+Dear {patient_name} and Family,
+
+We are pleased to inform you that your room has been successfully allocated! Our team has prepared everything for your comfortable stay.
+
+ROOM ALLOCATION CONFIRMATION
+=============================
+
+Patient Name: {patient_name}
+Member ID: {member_id}
+Room Number: {room_no}
+Bed Number: {bed_index}
+Room Type: {room_type}
+Gender: {gender}
+Admission Date: {admission_date}
+{'Pain Point/Condition: ' + pain_point if pain_point else ''}
+
+Your room is now ready and waiting for you. Our medical team and nursing staff are fully prepared to provide you with the best possible care during your stay.
+
+IMPORTANT INFORMATION:
+- Your room has been thoroughly cleaned and sanitized
+- All necessary medical equipment is available in your room
+- Nursing staff will be available 24/7 for your assistance
+- Meals will be served according to your scheduled timing
+- Please don't hesitate to call for any immediate needs
+
+ROOM FACILITIES:
+- Comfortable bed with clean linen
+- Attached bathroom with hot and cold water
+- Emergency call button connected to nursing station
+- Storage space for personal belongings
+- Adequate ventilation and lighting
+
+VISITING INFORMATION:
+- Visiting hours: 10:00 AM - 12:00 PM and 5:00 PM - 7:00 PM
+- Maximum 2 visitors at a time
+- Children below 12 years are not allowed for patient safety
+- Visitors must maintain silence and follow hospital protocols
+
+For any emergencies or immediate assistance, please use the emergency call button in your room or contact the reception.
+
+We are committed to making your stay comfortable and ensuring your speedy recovery. Your well-being is our top priority.
+
+Wishing you a comfortable and peaceful stay!
+
+Best Regards,
+Hospital Administration Team
+Grand World Healthcare
+Contact: {DEFAULT_SENDER_EMAIL}
+"""
+    
+    try:
+        if EMAIL_TRANSPORT == "gmail_api":
+            from gmail_api_sender import send_email_via_gmail_api
+            send_email_via_gmail_api(DEFAULT_SENDER_EMAIL, recipient, subject, email_body)
+        else:
+            message = EmailMessage()
+            message["Subject"] = subject
+            message["From"] = DEFAULT_SENDER_EMAIL
+            message["To"] = recipient
+            message.set_content(email_body)
+            
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                if SMTP_USERNAME and SMTP_PASSWORD:
+                    server.starttls()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(message)
+        
+        print(f"[Room Allocation Email] Successfully sent room allocation confirmation to {recipient}")
+    except Exception as e:
+        print(f"[Room Allocation Email] Failed to send room allocation confirmation: {e}")
+
+
 def send_admission_confirmation_email(recipient: str, admission_data: Dict[str, Any]) -> None:
     """
     Send admission confirmation email to patient/family
@@ -698,7 +800,7 @@ Contact: {DEFAULT_SENDER_EMAIL}
     try:
         if EMAIL_TRANSPORT == "gmail_api":
             from gmail_api_sender import send_email_via_gmail_api
-            send_email_via_gmail_api(recipient, email_body, subject)
+            send_email_via_gmail_api(DEFAULT_SENDER_EMAIL, recipient, subject, email_body)
         else:
             message = EmailMessage()
             message["Subject"] = subject
@@ -4191,6 +4293,7 @@ class BedAllocationRequest(BaseModel):
     admission_date: str
     discharge_date: Optional[str] = None
     pain_point: Optional[str] = None
+    email_id: Optional[str] = None
 
 class ComplaintRequest(BaseModel):
     patient_name: str
@@ -4405,6 +4508,24 @@ async def allocate_bed(payload: BedAllocationRequest):
         ws.update_cell(target_row_num, dis_idx + 1, payload.discharge_date or "")
         ws.update_cell(target_row_num, status_idx + 1, "Occupied")
         ws.update_cell(target_row_num, pain_idx + 1, payload.pain_point or "")
+        
+        # Send room allocation email if email is provided
+        if payload.email_id:
+            allocation_data = {
+                'patient_name': payload.patient_name,
+                'member_id': payload.member_id,
+                'room_no': payload.room_no,
+                'bed_index': payload.bed_index,
+                'room_type': payload.room_type,
+                'admission_date': payload.admission_date,
+                'gender': payload.gender,
+                'pain_point': payload.pain_point
+            }
+            try:
+                send_room_allocation_email(payload.email_id, allocation_data)
+                print(f"[Bed Allocation] Room allocation email sent to {payload.email_id}")
+            except Exception as e:
+                print(f"[Bed Allocation] Failed to send room allocation email: {e}")
         
         return {"status": "success", "message": "Bed allocated successfully"}
         
