@@ -233,6 +233,7 @@ const BedManagement = () => {
 
         let foundName = '';
         let foundGender = '';
+        let foundEmail = '';
         let foundPain = '';
 
         // Regex helpers
@@ -245,6 +246,7 @@ const BedManagement = () => {
         for (const v of rowVals) {
             if (!v) continue;
             if (!foundGender && genderRegex.test(v)) foundGender = v;
+            if (!foundEmail && emailRegex.test(v)) foundEmail = v;
         }
 
         // 2. Identify Name using header-based approach
