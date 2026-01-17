@@ -84,6 +84,18 @@ function App() {
     }
   }, [loginUser]);
 
+  // Save authentication state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('isAuthenticated', isAuthenticated.toString());
+  }, [isAuthenticated]);
+
+  // Save username to localStorage whenever it changes
+  useEffect(() => {
+    if (loginUser) {
+      localStorage.setItem('loginUser', loginUser);
+    }
+  }, [loginUser]);
+
   const todayDisplay = useMemo(() => {
     return new Date().toLocaleDateString('en-IN', {
       day: '2-digit',
