@@ -340,8 +340,8 @@ const BillingSummary = () => {
     const handleSendEmail = async () => {
         if (!selectedMemberId || !patientData) return;
         
-        // Check if patient has email
-        const patientEmail = patientData.email_id || patientData.email;
+        // Check if patient has email - check all possible email field names
+        const patientEmail = findVal(patientData, ['emailid', 'email_id', 'email', 'email id', 'Email Id', 'Email ID']);
         if (!patientEmail) {
             setError("Patient email address not found. Cannot send email.");
             return;
@@ -462,6 +462,7 @@ const BillingSummary = () => {
                                     <DetailItem label="Blood Group" keys={['bloodgroup', 'blood']} />
                                     <DetailItem label="Attender Name" keys={['attendername', 'emergencyname', 'relationalname']} />
                                     <DetailItem label="Contact" keys={['mobile', 'phone', 'contact', 'relationalmobile']} />
+                                    <DetailItem label="Email" keys={['emailid', 'email_id', 'email', 'email id', 'Email Id', 'Email ID']} />
                                     <DetailItem label="Address" keys={['address', 'city', 'location']} />
                                     <div className="col-span-2 border-t border-dashed border-gray-200 my-1"></div>
                                     <DetailItem label="Check-In Date" keys={['checkindate', 'admissiondate', 'date']} />

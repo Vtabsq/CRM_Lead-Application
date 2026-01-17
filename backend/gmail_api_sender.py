@@ -28,8 +28,9 @@ def get_gmail_service():
     
     # Try to load from environment variable first (for server deployment)
     refresh_token_b64 = os.getenv('GMAIL_REFRESH_TOKEN_B64')
+    oauth_credentials_b64 = os.getenv('GMAIL_OAUTH_CREDENTIALS_B64')
     
-    if refresh_token_b64:
+    if refresh_token_b64 and oauth_credentials_b64:
         print("[Gmail API] Loading credentials from environment variable")
         try:
             # Decode and load credentials from environment
@@ -83,7 +84,7 @@ def get_gmail_service():
     
     return build('gmail', 'v1', credentials=creds)
 
-def send_email_via_gmail_api(sender_email, recipient_email, subject, body_text, cc_emails=None, bcc_emails=None):
+def send_email_via_gmail_api(sender_email, recipient_email, subject, body_text, pdf_bytes=None, cc_emails=None, bcc_emails=None):
     """
     Send email using Gmail API
     
@@ -92,7 +93,9 @@ def send_email_via_gmail_api(sender_email, recipient_email, subject, body_text, 
         recipient_email: Recipient's email address
         subject: Email subject
         body_text: Email body (plain text)
+        pdf_bytes: PDF attachment bytes (optional)
         cc_emails: List of CC email addresses (optional)
+        bcc_emails: List of BCC email addresses (optional)
     
     Returns:
         dict: Response from Gmail API
@@ -113,6 +116,21 @@ def send_email_via_gmail_api(sender_email, recipient_email, subject, body_text, 
         
         # Add body
         message.attach(MIMEText(body_text, 'plain'))
+        
+        # Add PDF attachment if provided
+        if pdf_bytes:
+            from email.mime.base import MIMEBase
+            from email import encoders
+            
+            pdf_attachment = MIMEBase('application', 'pdf')
+            pdf_attachment.set_payload(pdf_bytes)
+            encoders.encode_base64(pdf_attachment)
+            pdf_attachment.add_header(
+                'Content-Disposition',
+                'attachment',
+                filename=f'Discharge_Summary.pdf'
+            )
+            message.attach(pdf_attachment)
         
         # Encode message
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
