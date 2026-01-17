@@ -6068,6 +6068,7 @@ async def generate_discharge_summary(payload: dict):
 async def send_discharge_summary_email(payload: dict, background_tasks: BackgroundTasks = BackgroundTasks()):
     """
     Generate discharge summary PDF and send it via email to the patient
+    Uses the same detailed PDF generation as the download endpoint
     """
     try:
         patient = payload.get("patient_data", {})
@@ -6082,40 +6083,21 @@ async def send_discharge_summary_email(payload: dict, background_tasks: Backgrou
         if not recipient_email:
             raise Exception("Recipient email is required")
         
-        # Generate PDF buffer (reuse existing logic)
-        buffer = io.BytesIO()
+        # Generate detailed PDF using the same logic as download endpoint
+        # Call the /generate-discharge-summary endpoint internally to get the same PDF
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.colors import HexColor, black, white, lightgrey
-        from reportlab.lib.units import mm
-        from reportlab.lib.utils import ImageReader
+        # Generate the PDF by calling the download endpoint
+        response = client.post("/generate-discharge-summary", json=payload)
         
-        c = canvas.Canvas(buffer, pagesize=A4)
-        width, height = A4
+        if response.status_code != 200:
+            raise Exception(f"Failed to generate PDF: {response.text}")
         
-        # Colors
-        primary_green = HexColor("#2E7D32")
-        dark_gray = HexColor("#333333")
-        light_gray = HexColor("#666666")
-        border_gray = HexColor("#E0E0E0")
-        bg_light = HexColor("#F5F5F5")
-        section_bg = HexColor("#F8F9FA")
+        # Get the PDF bytes from the response
+        pdf_bytes = response.content
         
-        # Logo path
-        logo_path = os.path.join(os.path.dirname(__file__), "Gw- Logo new (2) (1).png")
-        
-        # Page settings
-        header_height = 100
-        footer_height = 50
-        margin_left = 40
-        margin_right = 40
-        content_width = width - margin_left - margin_right
-        
-        # Track current page
-        page_num = [1]
-        
-        # Helper function to get patient value with multiple key attempts
+        # Helper function to extract patient values
         def get_patient_val(keys):
             if isinstance(keys, str):
                 keys = [keys]
@@ -6125,108 +6107,11 @@ async def send_discharge_summary_email(payload: dict, background_tasks: Backgrou
                     return str(val)
             return ""
         
-        # Draw header
-        c.setFillColor(primary_green)
-        c.rect(0, height - header_height, width, header_height, fill=1)
-        
-        # Add logo if exists
-        if os.path.exists(logo_path):
-            try:
-                logo = ImageReader(logo_path)
-                c.drawImage(logo, margin_left, height - header_height + 20, width=60, height=60, mask='auto')
-            except:
-                pass
-        
-        # Hospital name and header text
-        c.setFillColor(white)
-        c.setFont("Helvetica-Bold", 24)
-        c.drawString(120, height - 40, "Grand World Healthcare")
-        c.setFont("Helvetica-Bold", 18)
-        c.drawString(120, height - 70, "Discharge Summary")
-        
-        # Patient information section
-        y_position = height - header_height - 30
-        c.setFillColor(black)
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(margin_left, y_position, "Patient Information")
-        
-        y_position -= 25
-        c.setFont("Helvetica", 11)
-        
-        # Patient details
-        patient_info = [
-            ("Name", get_patient_val(["patientname", "name", "patient_name"])),
-            ("Member ID", get_patient_val(["memberidkey", "memberid", "id"])),
-            ("Age", get_patient_val(["age"])),
-            ("Gender", get_patient_val(["gender", "sex"])),
-            ("Blood Group", get_patient_val(["bloodgroup", "blood"])),
-            ("Admission Date", get_patient_val(["checkindate", "admissiondate", "date"])),
-            ("Discharge Date", get_patient_val(["checkoutdate", "dischargedate", "checkout"])),
-            ("Room Type", get_patient_val(["roomtype", "room", "bedcategory"])),
-            ("Attender Name", get_patient_val(["attendername", "emergencyname", "relationalname"]))
-        ]
-        
-        for label, value in patient_info:
-            if value:
-                c.drawString(margin_left, y_position, f"{label}: {value}")
-                y_position -= 18
-                if y_position < 150:  # Need new page
-                    c.showPage()
-                    y_position = height - 50
-                    page_num[0] += 1
-        
-        # Billing details section
-        y_position -= 20
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(margin_left, y_position, "Billing Details")
-        
-        y_position -= 25
-        c.setFont("Helvetica", 11)
-        
-        billing_info = [
-            ("Total Days", str(days)),
-            ("Room Charge", f"₹{totals.get('room', 0):,.2f}"),
-            ("Bed Charge", f"₹{totals.get('bed', 0):,.2f}"),
-            ("Nurse Fee", f"₹{totals.get('nurse', 0):,.2f}"),
-            ("Additional Nurse Fee", f"₹{totals.get('additional_nurse', 0):,.2f}"),
-            ("Other Charges", f"₹{totals.get('other_charges', 0):,.2f}"),
-            ("Hospital Fee", f"₹{totals.get('hospital', 0):,.2f}"),
-            ("Doctor Fee", f"₹{totals.get('doctor', 0):,.2f}"),
-            ("Service Charge", f"₹{totals.get('service', 0):,.2f}"),
-            ("Discount", f"₹{totals.get('discount', 0):,.2f}")
-        ]
-        
-        for label, value in billing_info:
-            c.drawString(margin_left, y_position, f"{label}: {value}")
-            y_position -= 18
-            if y_position < 150:  # Need new page
-                c.showPage()
-                y_position = height - 50
-                page_num[0] += 1
-        
-        # Grand total
-        y_position -= 10
-        c.setFont("Helvetica-Bold", 12)
-        c.setFillColor(primary_green)
-        c.drawString(margin_left, y_position, f"Grand Total: ₹{totals.get('grand', 0):,.2f}")
-        
-        # Footer
-        c.setFillColor(lightgrey)
-        c.rect(0, 0, width, footer_height, fill=1)
-        c.setFillColor(black)
-        c.setFont("Helvetica", 9)
-        c.drawString(margin_left, 20, "Grand World Healthcare | Contact: info@grandworld.com | 24/7 Emergency: +91-XXX-XXX-XXXX")
-        c.drawRightString(width - margin_right, 20, f"Page {page_num[0]}")
-        
-        # Save PDF
-        c.save()
-        buffer.seek(0)
-        
-        # Send email with PDF attachment
+        # Send email with the detailed PDF attachment
         background_tasks.add_task(
             send_email_with_pdf_attachment,
             recipient_email,
-            buffer.getvalue(),
+            pdf_bytes,
             get_patient_val(["patientname", "name", "patient_name"]),
             get_patient_val(["memberidkey", "memberid", "id"])
         )
