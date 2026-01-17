@@ -4,6 +4,7 @@ Usage: python run.py
 """
 import uvicorn
 import os
+from main import app  # Import app from main.py to expose it for uvicorn
 
 if __name__ == "__main__":
     # Check for required files before starting
@@ -23,6 +24,7 @@ if __name__ == "__main__":
             print(f"   - {file}")
         print("\nThe server will start, but some features may not work.")
         print("Please place the required files in the backend/ folder.\n")
+    
     
     print("🚀 Starting CRM Lead Form Backend...")
     print("📍 Server will be available at: http://localhost:8000")

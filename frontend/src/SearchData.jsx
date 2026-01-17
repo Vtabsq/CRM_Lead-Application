@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, RefreshCw, Table, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, Table, ChevronLeft, ChevronRight, Edit2, X, Save } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 const COLUMNS_PER_PAGE = 5;
 
 const SearchData = () => {
@@ -14,13 +14,9 @@ const SearchData = () => {
     const [searchResults, setSearchResults] = useState(null);
     const [columnPage, setColumnPage] = useState(0);
     const [error, setError] = useState('');
-    // The backend endpoint now returns { status: "success", data: [...] }
-    // There is no sheet_url returned in the new response format, so we might need to remove viewSheet URL logic
-    // or keep it if we can infer it. However, the user instruction implies "View Full Sheet" button should just "Load all records"
-    // into the table, NOT open a new tab with Google Sheets URL.
-    // "View Full Sheet button does not reliably load all records... Search must always read from Google Sheet"
-    // And "Add this function: loadAllRecords... Attach it to: <button onClick={loadAllRecords}>View Full Sheet</button>"
-    // So the "View Full Sheet" button essentially becomes "Show All Data".
+    const [editingRow, setEditingRow] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
+    const [saving, setSaving] = useState(false);
 
     const updateSearchCriteria = (field, value) => {
         setSearchCriteria(prev => ({ ...prev, [field]: value }));
@@ -29,11 +25,10 @@ const SearchData = () => {
     const performSearch = async () => {
         try {
             setError('');
-            // New POST API call
             const res = await axios.post(`${API_BASE_URL}/search`, {
                 date: searchCriteria.date,
                 name: searchCriteria.name,
-                memberId: searchCriteria.member_id // Backend expects memberId, state calls it member_id. Map it properly.
+                memberId: searchCriteria.member_id
             });
 
             if (res.data.status === "success") {
@@ -79,22 +74,56 @@ const SearchData = () => {
         setError('');
     };
 
-    // Auto-load logic if needed? The user didn't explicitly remove it but said "Switching pages... must not freeze".
-    // I will keep manual search for now to avoid freezing unless user wants auto-load.
-    // App.jsx comment in original code: "Auto-load logic from App.jsx".
-    // I'll keep it but use loadAllRecords maybe? Or just performSearch (which uses current criteria).
-    useEffect(() => {
-        // Initial load? maybe.
-        // If we want to be safe and avoid freezing, maybe don't auto-load massive data unless asked.
-        // But generally simple search pages might start empty.
-        // I will commented out auto-load or remove it if not requested.
-        // Actually, user said "Search Field has been moved... It must appear as TOP... Search should be accessible from any page".
-        // Providing an empty start state is usually safer.
-    }, []);
+    const handleEdit = (row) => {
+        setEditingRow(row);
+        setEditFormData({ ...row });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingRow(null);
+        setEditFormData({});
+        setError('');
+    };
+
+    const handleEditFormChange = (field, value) => {
+        setEditFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            setError('');
+
+            // Find Member ID from the row
+            const memberIdKey = Object.keys(editFormData).find(k =>
+                /member.*id|.*key/i.test(k)
+            );
+
+            if (!memberIdKey || !editFormData[memberIdKey]) {
+                setError('Member ID is required to update the record');
+                setSaving(false);
+                return;
+            }
+
+            await axios.put(`${API_BASE_URL}/update_record`, {
+                member_id: editFormData[memberIdKey],
+                data: editFormData
+            });
+
+            // Refresh search results
+            await performSearch();
+            setEditingRow(null);
+            setEditFormData({});
+            setError('');
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Failed to update record');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const getCurrentColumnHeaders = () => {
         if (!searchResults || searchResults.length === 0) return [];
-        // Extract headers from the first row of data
         const headers = Object.keys(searchResults[0]);
         const start = columnPage * COLUMNS_PER_PAGE;
         return headers.slice(start, start + COLUMNS_PER_PAGE);
@@ -102,13 +131,11 @@ const SearchData = () => {
 
     const getCurrentColumnData = () => {
         if (!searchResults || searchResults.length === 0) return [];
-        const headers = Object.keys(searchResults[0]); // Get all headers
+        const headers = Object.keys(searchResults[0]);
         const start = columnPage * COLUMNS_PER_PAGE;
         const currentHeaders = headers.slice(start, start + COLUMNS_PER_PAGE);
 
         return searchResults.map(row => {
-            // meaningful order? The JSON object keys are unordered in JS technically but usually fine.
-            // Better to map currentHeaders to values.
             return currentHeaders.map(h => row[h]);
         });
     };
@@ -202,6 +229,9 @@ const SearchData = () => {
                             <table className="table-auto border-collapse min-w-full">
                                 <thead className="bg-gray-50 sticky top-0 border-b-2 border-gray-300 z-10 shadow-sm">
                                     <tr>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-800 text-base whitespace-nowrap border-r border-gray-200 bg-gray-50">
+                                            Actions
+                                        </th>
                                         {getCurrentColumnHeaders().map((header, i) => (
                                             <th key={i} className="px-4 py-3 text-left font-semibold text-gray-800 text-base whitespace-nowrap border-r border-gray-200 min-w-[160px] bg-gray-50">
                                                 {header}
@@ -210,9 +240,18 @@ const SearchData = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {getCurrentColumnData().map((row, i) => (
-                                        <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
-                                            {row.map((cell, j) => (
+                                    {searchResults.map((fullRow, rowIndex) => (
+                                        <tr key={rowIndex} className="border-b border-gray-200 hover:bg-gray-50">
+                                            <td className="px-4 py-3 border-r border-gray-200">
+                                                <button
+                                                    onClick={() => handleEdit(fullRow)}
+                                                    className="flex items-center px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                                                    title="Edit this row"
+                                                >
+                                                    <Edit2 className="w-4 h-4 mr-1" /> Edit
+                                                </button>
+                                            </td>
+                                            {getCurrentColumnData()[rowIndex].map((cell, j) => (
                                                 <td key={j} className="px-4 py-3 text-base break-words border-r border-gray-200 min-w-[160px]">
                                                     {cell || '-'}
                                                 </td>
@@ -252,6 +291,77 @@ const SearchData = () => {
                             </button>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editingRow && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-white">Edit Record</h3>
+                            <button
+                                onClick={handleCancelEdit}
+                                className="text-white hover:bg-blue-800 rounded-full p-1 transition-colors"
+                                disabled={saving}
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 overflow-y-auto flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {Object.keys(editFormData).map((field) => {
+                                    const isReadOnly = /member.*id|.*key|timestamp/i.test(field);
+                                    return (
+                                        <div key={field}>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {field}
+                                                {isReadOnly && <span className="text-gray-400 text-xs ml-2">(Read-only)</span>}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editFormData[field] || ''}
+                                                onChange={(e) => handleEditFormChange(field, e.target.value)}
+                                                readOnly={isReadOnly}
+                                                className={`w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${isReadOnly ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : ''}`}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+                            <button
+                                onClick={handleCancelEdit}
+                                disabled={saving}
+                                className="px-6 py-2 border border-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="flex items-center px-6 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

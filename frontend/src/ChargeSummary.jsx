@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Loader2, DollarSign } from 'lucide-react';
+import { Save, Loader2, IndianRupee } from 'lucide-react';
+import API_BASE_URL from './config';
 
 const ChargeSummary = () => {
     const [charges, setCharges] = useState(null);
@@ -15,7 +16,7 @@ const ChargeSummary = () => {
 
     const fetchCharges = async () => {
         try {
-            const res = await axios.get('http://localhost:8000/api/settings/charges');
+            const res = await axios.get(`${API_BASE_URL}/api/settings/charges`);
             setCharges(res.data);
             setLoading(false);
         } catch (err) {
@@ -30,7 +31,7 @@ const ChargeSummary = () => {
             setSaving(true);
             setError('');
             setSuccess('');
-            await axios.post('http://localhost:8000/api/settings/charges', charges);
+            await axios.post(`${API_BASE_URL}/api/settings/charges`, charges);
             setSuccess("Charges updated successfully!");
         } catch (err) {
             setError("Failed to save charges.");
@@ -44,7 +45,7 @@ const ChargeSummary = () => {
     return (
         <div className="w-full p-4 bg-white  shadow-lg border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                <DollarSign className="mr-2 text-blue-600" />
+                <IndianRupee className="mr-2 text-blue-600" />
                 Fixed Rate Settings
             </h2>
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { Search, FileDown, Calculator, User, Calendar, IndianRupee, Activity, AlertCircle, Save, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Search, FileDown, Calculator, User, Calendar, IndianRupee, Activity, AlertCircle, Save, CheckCircle2, ChevronDown, Mail } from 'lucide-react';
 
 const normalize_header = (h) => {
     return str(h).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
 }
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 
 const BillingSummary = () => {
     // Search & Data State
@@ -34,23 +34,33 @@ const BillingSummary = () => {
         room_charge: 0,
         bed_charge: 0,
         nurse_payment: 0,
+        additional_nurse_payment: 0,
+        other_charges_amenities: 0,
         hospital_payment: 0,
         doctor_fee: 0,
-        service_charge: 0
+        service_charge: 0,
+        discount: 0
     });
 
     const [totals, setTotals] = useState({
         room: 0,
         bed: 0,
         nurse: 0,
+        additional_nurse: 0,
+        other_charges: 0,
         hospital: 0,
         doctor: 0,
         service: 0,
+        discount: 0,
         grand: 0
     });
 
     // Saving State
     const [saving, setSaving] = useState(false);
+    
+    // Email Sending State
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const [emailSuccess, setEmailSuccess] = useState('');
 
     // --- 1. Initial Fetch (Patients & Charges) ---
     useEffect(() => {
@@ -202,33 +212,50 @@ const BillingSummary = () => {
             room_charge: roomRate,
             bed_charge: defaultCharges.bed_service_charge || 0,
             nurse_payment: defaultCharges.nurse_fee || 0,
+            additional_nurse_payment: 0,
+            other_charges_amenities: 0,
             hospital_payment: defaultCharges.registration_fee || 0,
             doctor_fee: defaultCharges.consultation_fee || 0,
-            service_charge: defaultCharges.miscellaneous_fee || 0
+            service_charge: defaultCharges.miscellaneous_fee || 0,
+            discount: 0
         });
     };
 
     // --- 5. Auto Calculation ---
     useEffect(() => {
         const days = calculatedDays > 0 ? calculatedDays : 1;
-        const { room_charge, bed_charge, nurse_payment, hospital_payment, doctor_fee, service_charge } = billingInputs;
+        const {
+            room_charge, bed_charge, nurse_payment,
+            additional_nurse_payment, other_charges_amenities,
+            hospital_payment, doctor_fee, service_charge, discount
+        } = billingInputs;
 
+        // Daily charges (multiplied by days)
         const tRoom = Number(room_charge) * days;
         const tBed = Number(bed_charge) * days;
         const tNurse = Number(nurse_payment) * days;
+        const tAdditionalNurse = Number(additional_nurse_payment) * days;
+        const tOtherCharges = Number(other_charges_amenities) * days;
         const tHospital = Number(hospital_payment) * days;
 
-        const subTotal = tRoom + tBed + tNurse + tHospital;
+        const subTotal = tRoom + tBed + tNurse + tAdditionalNurse + tOtherCharges + tHospital;
+
+        // Fixed charges
         const fixedVals = Number(doctor_fee) + Number(service_charge);
-        const grand = subTotal + fixedVals;
+
+        // Grand total with discount subtraction (prevent negative)
+        const grand = Math.max(0, subTotal + fixedVals - Number(discount));
 
         setTotals({
             room: tRoom,
             bed: tBed,
             nurse: tNurse,
+            additional_nurse: tAdditionalNurse,
+            other_charges: tOtherCharges,
             hospital: tHospital,
             doctor: Number(doctor_fee),
             service: Number(service_charge),
+            discount: Number(discount),
             grand: grand
         });
 
@@ -307,9 +334,47 @@ const BillingSummary = () => {
         link.href = url;
         link.download = `Discharge_${selectedMemberId}.pdf`;
         link.click();
+        window.URL.revokeObjectURL(url);
     };
 
-    // UI Components Helpers
+    const handleSendEmail = async () => {
+        if (!selectedMemberId || !patientData) return;
+        
+        // Check if patient has email - check all possible email field names
+        const patientEmail = findVal(patientData, ['emailid', 'email_id', 'email', 'email id', 'Email Id', 'Email ID']);
+        if (!patientEmail) {
+            setError("Patient email address not found. Cannot send email.");
+            return;
+        }
+
+        try {
+            setSendingEmail(true);
+            setError('');
+            setEmailSuccess('');
+
+            const payload = {
+                patient_data: patientData,
+                billing_data: billingInputs,
+                totals: totals,
+                calculated_days: calculatedDays,
+                recipient_email: patientEmail
+            };
+
+            await axios.post(
+                `${API_BASE_URL}/send-discharge-summary-email`,
+                payload
+            );
+
+            setEmailSuccess(`Discharge summary sent successfully to ${patientEmail}`);
+            setTimeout(() => setEmailSuccess(''), 5000);
+        } catch (err) {
+            console.error("Failed to send email:", err);
+            setError(err.response?.data?.detail || "Failed to send email. Please try again.");
+        } finally {
+            setSendingEmail(false);
+        }
+    };
+
     const DetailItem = ({ label, keys }) => (
         <div>
             <span className="text-xs font-bold text-gray-400 uppercase block">{label}</span>
@@ -317,6 +382,7 @@ const BillingSummary = () => {
         </div>
     );
 
+// ... (rest of the code remains the same)
     return (
         <div className="flex flex-col h-full bg-gray-50 p-6 overflow-hidden">
             {/* Header */}
@@ -396,6 +462,7 @@ const BillingSummary = () => {
                                     <DetailItem label="Blood Group" keys={['bloodgroup', 'blood']} />
                                     <DetailItem label="Attender Name" keys={['attendername', 'emergencyname', 'relationalname']} />
                                     <DetailItem label="Contact" keys={['mobile', 'phone', 'contact', 'relationalmobile']} />
+                                    <DetailItem label="Email" keys={['emailid', 'email_id', 'email', 'email id', 'Email Id', 'Email ID']} />
                                     <DetailItem label="Address" keys={['address', 'city', 'location']} />
                                     <div className="col-span-2 border-t border-dashed border-gray-200 my-1"></div>
                                     <DetailItem label="Check-In Date" keys={['checkindate', 'admissiondate', 'date']} />
@@ -435,6 +502,8 @@ const BillingSummary = () => {
                                     <InputRow label="Room Charge" name="room_charge" val={billingInputs.room_charge} set={setBillingInputs} total={totals.room} />
                                     <InputRow label="Bed Charge" name="bed_charge" val={billingInputs.bed_charge} set={setBillingInputs} total={totals.bed} />
                                     <InputRow label="Nurse Fee" name="nurse_payment" val={billingInputs.nurse_payment} set={setBillingInputs} total={totals.nurse} />
+                                    <InputRow label="Additional Nurse Fee" name="additional_nurse_payment" val={billingInputs.additional_nurse_payment} set={setBillingInputs} total={totals.additional_nurse} />
+                                    <InputRow label="Other Charges (Amenities)" name="other_charges_amenities" val={billingInputs.other_charges_amenities} set={setBillingInputs} total={totals.other_charges} />
                                     <InputRow label="Hospital Fee" name="hospital_payment" val={billingInputs.hospital_payment} set={setBillingInputs} total={totals.hospital} />
                                 </div>
                             </div>
@@ -447,6 +516,7 @@ const BillingSummary = () => {
                                 <div className="space-y-3">
                                     <InputRow label="Doctor Fee" name="doctor_fee" val={billingInputs.doctor_fee} set={setBillingInputs} isFixed />
                                     <InputRow label="Service Charge" name="service_charge" val={billingInputs.service_charge} set={setBillingInputs} isFixed />
+                                    <InputRow label="Discount" name="discount" val={billingInputs.discount} set={setBillingInputs} isFixed />
                                 </div>
                             </div>
                         </div>
@@ -458,7 +528,7 @@ const BillingSummary = () => {
                                 <span className="text-3xl font-extrabold text-blue-700">₹{totals.grand.toLocaleString()}</span>
                             </div>
 
-                            <div className="grid grid-cols-1">
+                            <div className="grid grid-cols-1 gap-2">
                                 <button
                                     onClick={handleDownloadPdf}
                                     disabled={!selectedMemberId}
@@ -466,6 +536,18 @@ const BillingSummary = () => {
                                 >
                                     <FileDown className="w-4 h-4" /> Download Discharge Summary
                                 </button>
+                                <button
+                                    onClick={handleSendEmail}
+                                    disabled={!selectedMemberId || sendingEmail}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg flex justify-center items-center gap-2 shadow md:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full"
+                                >
+                                    <Mail className="w-4 h-4" /> {sendingEmail ? 'Sending...' : 'Send Email'}
+                                </button>
+                                {emailSuccess && (
+                                    <div className="text-green-600 text-sm font-medium text-center bg-green-50 p-2 rounded">
+                                        {emailSuccess}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

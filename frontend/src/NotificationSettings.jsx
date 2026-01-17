@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Bell, Loader2, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost:8000';
+import API_BASE_URL from './config';
 
 const NotificationSettings = () => {
     const navigate = useNavigate();

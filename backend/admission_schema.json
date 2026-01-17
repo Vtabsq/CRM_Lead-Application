@@ -273,6 +273,17 @@
     ]
   },
   {
+    "name": "care_center",
+    "label": "Care Center",
+    "data_type": "dropdown",
+    "options": [
+      "RS Puram",
+      "ram nagar",
+      "chennai",
+      "other"
+    ]
+  },
+  {
     "name": "pain_point",
     "label": "Pain Point",
     "data_type": "dropdown",
