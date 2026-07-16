@@ -56,3 +56,23 @@ backend/gmail_oauth_credentials.json
 backend/google_sheet_id.txt
 backend/patient_admission_sheet_id.txt
 backend/crm-admission.json
+
+# Credential and sensitive data files
+LOGIN_CREDENTIALS.md
+backend/all_login_users.txt
+backend/login_check_results.txt
+backend/test_login.json
+backend/dropdown_cache.json
+backend/schema_cache.json
+backend/debug_output.txt
+backend/billing_diagnostic_output.txt
+backend/error.txt
+backend/sheet_tabs.txt
+
+# Temporary scripts (should not be in production)
+scratch_categorize.py
+generate_report.py
+revised_report.md
+migrate_frontend.py
+scratch_analysis.json
+

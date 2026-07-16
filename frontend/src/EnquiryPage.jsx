@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import axios from 'axios';
+import api from './api';
 import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle, XCircle, User, Phone, Edit3, Upload, MessageSquare } from 'lucide-react';
 
-import API_BASE_URL from './config';
 const FIELDS_PER_PAGE = 10;
 const FOLLOW_UP_PAGE_INDEX = 2;
 const COMPLAINTS_PAGE_INDEX = 3;
@@ -147,7 +146,7 @@ const EnquiryPage = () => {
             setLoading(true);
             setError('');
             // Default to 'enquiry' type
-            const response = await axios.get(`${API_BASE_URL}/get_fields?type=enquiry`);
+            const response = await api.get('/get_fields?type=enquiry');
             const got = response.data.fields || [];
             const reorderedSchema = reorderFieldsForInquiryPage(got);
             setSchema(reorderedSchema);
@@ -424,7 +423,7 @@ const EnquiryPage = () => {
             };
 
             const payloadData = convertDatesForPayload(mergedData);
-            const response = await axios.post(`${API_BASE_URL}/submit`, { data: payloadData });
+            const response = await api.post('/submit', { data: payloadData });
 
             setMessage(response.data.message || 'Data submitted successfully!');
             if (response.data.sheet_url) setSheetUrl(response.data.sheet_url);
@@ -473,7 +472,7 @@ const EnquiryPage = () => {
             return;
         }
         try {
-            const res = await axios.get(`${API_BASE_URL}/debug/latest`);
+            const res = await api.get('/debug/latest');
             if (res.data?.sheet_url) window.open(res.data.sheet_url, '_blank');
         } catch {
             setError('Cannot open sheet.');

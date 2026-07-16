@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import axios from 'axios';
-import API_BASE_URL from '../config';
+import api from '../api';
 
 const ServiceCatalog = () => {
     const [activeTab, setActiveTab] = useState('Services');
@@ -19,9 +18,9 @@ const ServiceCatalog = () => {
     const loadCatalogData = async () => {
         try {
             const [servicesRes, packagesRes, productsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/api/catalog/services`),
-                axios.get(`${API_BASE_URL}/api/catalog/packages`),
-                axios.get(`${API_BASE_URL}/api/catalog/products`)
+                api.get('/api/catalog/services'),
+                api.get('/api/catalog/packages'),
+                api.get('/api/catalog/products')
             ]);
 
             setServices(servicesRes.data.items || []);
@@ -70,7 +69,7 @@ const ServiceCatalog = () => {
 
         try {
             const category = activeTab.toLowerCase();
-            const response = await axios.post(`${API_BASE_URL}/api/catalog/${category}`, {
+            const response = await api.post(`/api/catalog/${category}`, {
                 name: newItem.name,
                 price: parseFloat(newItem.price)
             });
@@ -92,7 +91,7 @@ const ServiceCatalog = () => {
     const handleSaveEdit = async () => {
         try {
             const category = activeTab.toLowerCase();
-            await axios.put(`${API_BASE_URL}/api/catalog/${category}/${editingItem.id}`, {
+            await api.put(`/api/catalog/${category}/${editingItem.id}`, {
                 name: editingItem.name,
                 price: parseFloat(editingItem.price)
             });
@@ -116,7 +115,7 @@ const ServiceCatalog = () => {
 
         try {
             const category = activeTab.toLowerCase();
-            await axios.delete(`${API_BASE_URL}/api/catalog/${category}/${id}`);
+            await api.delete(`/api/catalog/${category}/${id}`);
 
             const currentItems = getCurrentItems();
             const updatedItems = currentItems.filter(item => item.id !== id);

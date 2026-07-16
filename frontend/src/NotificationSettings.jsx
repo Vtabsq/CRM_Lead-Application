@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Bell, Loader2, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import API_BASE_URL from './config';
 
 const NotificationSettings = () => {
     const navigate = useNavigate();
@@ -15,7 +14,7 @@ const NotificationSettings = () => {
 
     const fetchNotificationSettings = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/notification_settings`);
+            const res = await api.get('/notification_settings');
             if (res.data?.sender_email) {
                 setSenderEmail(res.data.sender_email);
             }
@@ -51,7 +50,7 @@ const NotificationSettings = () => {
             }
 
             const ccList = parseCcInput(ccEmailsInput);
-            const res = await axios.post(`${API_BASE_URL}/notification_settings`, { sender_email: senderEmail, cc_emails: ccList });
+            const res = await api.post('/notification_settings', { sender_email: senderEmail, cc_emails: ccList });
 
             if (Array.isArray(res.data?.cc_emails)) {
                 setCcEmailsInput(res.data.cc_emails.join('\n'));

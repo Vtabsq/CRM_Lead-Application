@@ -122,6 +122,10 @@ function App() {
       });
 
       if (response.data?.status === 'ok') {
+        // Store JWT token for API authentication
+        if (response.data.token) {
+          localStorage.setItem('authToken', response.data.token);
+        }
         setIsAuthenticated(true);
         setLoginError('');
       } else {
@@ -148,6 +152,7 @@ function App() {
     // Clear localStorage on logout
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('loginUser');
+    localStorage.removeItem('authToken');
   };
 
   // Render Login Screen if not authenticated

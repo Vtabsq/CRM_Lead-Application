@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Sparkles, X, Loader2, Send } from 'lucide-react';
 
-import API_BASE_URL from './config';
 
 const AIChat = () => {
     const [showAIChat, setShowAIChat] = useState(false);
@@ -52,7 +51,7 @@ const AIChat = () => {
             // But removing it might annoy the user.
 
             // I'll use a safe implementation.
-            const response = await axios.post(`${API_BASE_URL}/chat_query`, {
+            const response = await api.post('/chat_query', {
                 query: userMsg.text,
                 filter: aiChatFilter
             });

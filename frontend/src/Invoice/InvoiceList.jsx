@@ -4,11 +4,11 @@ import {
     ChevronDown, Download, RefreshCw, FileText, Plus, Search as SearchIcon,
     Mail, Printer, Share2, DollarSign, Calendar, RotateCcw
 } from 'lucide-react';
-import axios from 'axios';
+import api from '../api';
+import API_BASE_URL from '../config';
 import PatientSearch from '../components/PatientSearch';
 import InvoiceTable from '../components/InvoiceTable';
 import EditableDropdown from '../components/EditableDropdown';
-import API_BASE_URL from '../config';
 
 const InvoiceList = () => {
     const navigate = useNavigate();
@@ -91,7 +91,7 @@ const InvoiceList = () => {
                 params.date_to = dateRange.end;
             }
 
-            const response = await axios.get(`${API_BASE_URL}/api/invoices`, { params });
+            const response = await api.get('/api/invoices', { params });
             setInvoices(response.data.invoices || []);
         } catch (error) {
             console.error('Error loading invoices:', error);
@@ -211,8 +211,8 @@ const InvoiceList = () => {
                 // Download invoice PDF from backend
                 try {
                     console.log('Downloading PDF for invoice:', invoice);
-                    const response = await axios.get(
-                        `${API_BASE_URL}/api/invoices/${invoice.invoice_id}/pdf`,
+                    const response = await api.get(
+                        `/api/invoices/${invoice.invoice_id}/pdf`,
                         { responseType: 'blob' }
                     );
 

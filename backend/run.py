@@ -32,10 +32,12 @@ if __name__ == "__main__":
     print("🏥 Health Check: http://localhost:8000/health")
     print("\nPress Ctrl+C to stop the server\n")
     
+    is_production = os.getenv("ENV", "development").lower() == "production"
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        log_level="info"
+        reload=not is_production,
+        log_level="warning" if is_production else "info"
     )

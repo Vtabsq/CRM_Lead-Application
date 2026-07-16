@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Search, FileDown, Calculator, User, Calendar, IndianRupee, Activity, AlertCircle, Save, CheckCircle2, ChevronDown, Mail } from 'lucide-react';
 
 const normalize_header = (h) => {
     return str(h).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
 }
 
-import API_BASE_URL from './config';
 
 const BillingSummary = () => {
     // Search & Data State
@@ -81,7 +80,7 @@ const BillingSummary = () => {
         setLoadingPatients(true);
         try {
             // First try view endpoint which returns all rows from secondary
-            let res = await axios.get(`${API_BASE_URL}/patient-admission/view`);
+            let res = await api.get('/patient-admission/view');
             if (res.data.status === 'success' && res.data.data.length > 0) {
                 setAllPatients(res.data.data);
                 setFilteredPatients(res.data.data);
@@ -89,7 +88,7 @@ const BillingSummary = () => {
                 // Fallback to search_data or similar if needed, but expectation is View has it
                 // If secondary is empty, try /search_data limit=2000? 
                 // Let's rely on view or search_data as fallback
-                const searchRes = await axios.get(`${API_BASE_URL}/search_data?limit=1000`);
+                const searchRes = await api.get('/search_data?limit=1000');
                 if (searchRes.data.results) {
                     setAllPatients(searchRes.data.results);
                     setFilteredPatients(searchRes.data.results);
@@ -104,7 +103,7 @@ const BillingSummary = () => {
 
     const fetchCharges = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/settings/charges`);
+            const res = await api.get('/api/settings/charges');
             setDefaultCharges(res.data);
         } catch (err) {
             console.error("Failed to load charges", err);
@@ -158,7 +157,7 @@ const BillingSummary = () => {
         // Fetch authoritative details
         setLoadingDetails(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/admission-details`, { params: { member_id: mid } });
+            const res = await api.get('/admission-details', { params: { member_id: mid } });
             setPatientData(res.data);
 
             // Auto-populate logic
@@ -277,7 +276,7 @@ const BillingSummary = () => {
                 grand_total: totals.grand
             };
 
-            await axios.post(`${API_BASE_URL}/billing-summary/save`, payload);
+            await api.post('/billing-summary/save', payload);
             setSuccessMsg("Billing saved to Google Sheet successfully!");
 
         } catch (err) {
@@ -297,7 +296,7 @@ const BillingSummary = () => {
                 billing_inputs: billingInputs,
                 total_amount: totals.grand
             };
-            const response = await axios.post(`${API_BASE_URL}/billing-summary/export`, payload, {
+            const response = await api.post('/billing-summary/export', payload, {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -322,8 +321,8 @@ const BillingSummary = () => {
             calculated_days: calculatedDays
         };
 
-        const response = await axios.post(
-            `${API_BASE_URL}/generate-discharge-summary`,
+        const response = await api.post(
+            '/generate-discharge-summary',
             payload,
             { responseType: "blob" }
         );
@@ -360,8 +359,8 @@ const BillingSummary = () => {
                 recipient_email: patientEmail
             };
 
-            await axios.post(
-                `${API_BASE_URL}/send-discharge-summary-email`,
+            await api.post(
+                '/send-discharge-summary-email',
                 payload
             );
 

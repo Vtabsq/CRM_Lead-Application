@@ -227,6 +227,9 @@ def get_all_homecare_clients() -> List[Dict[str, Any]]:
     Returns:
         List of client records
     """
+    if not HOMECARE_SHEET_ID:
+        print("[Home Care] HOMECARE_SHEET_ID not configured - returning empty list")
+        return []
     try:
         worksheet = get_homecare_sheet()
         all_values = worksheet.get_all_values()
@@ -266,9 +269,6 @@ def get_all_homecare_clients() -> List[Dict[str, Any]]:
         
     except Exception as e:
         print(f"[Home Care] Error fetching clients: {e}")
-        if "HOMECARE_SHEET_ID" in str(e):
-            print("[Home Care] HOMECARE_SHEET_ID not configured - returning empty list")
-            return []
         raise
 
 

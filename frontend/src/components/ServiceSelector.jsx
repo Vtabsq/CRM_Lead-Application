@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Plus } from 'lucide-react';
-import axios from 'axios';
+import api from '../api';
 import API_BASE_URL from '../config';
 
 const ServiceSelector = ({ onAddService, onClose }) => {
@@ -42,9 +42,9 @@ const ServiceSelector = ({ onAddService, onClose }) => {
     const loadCatalogData = async () => {
         try {
             const [servicesRes, packagesRes, productsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/api/catalog/services`),
-                axios.get(`${API_BASE_URL}/api/catalog/packages`),
-                axios.get(`${API_BASE_URL}/api/catalog/products`)
+                api.get('/api/catalog/services'),
+                api.get('/api/catalog/packages'),
+                api.get('/api/catalog/products')
             ]);
 
             setServices(servicesRes.data.items || []);
@@ -59,10 +59,10 @@ const ServiceSelector = ({ onAddService, onClose }) => {
         try {
             console.log('Loading dropdown options from API...');
             const [providerRes, soldByRes, externalProviderRes, discountRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/api/dropdowns/provider`),
-                axios.get(`${API_BASE_URL}/api/dropdowns/sold_by`),
-                axios.get(`${API_BASE_URL}/api/dropdowns/external_provider`),
-                axios.get(`${API_BASE_URL}/api/dropdowns/discount`)
+                api.get('/api/dropdowns/provider'),
+                api.get('/api/dropdowns/sold_by'),
+                api.get('/api/dropdowns/external_provider'),
+                api.get('/api/dropdowns/discount')
             ]);
 
             console.log('Dropdown options loaded:', {
@@ -113,7 +113,7 @@ const ServiceSelector = ({ onAddService, onClose }) => {
 
         try {
             console.log('Sending POST request...');
-            const response = await axios.post(`${API_BASE_URL}/api/dropdowns/${category}`, {
+            const response = await api.post(`/api/dropdowns/${category}`, {
                 value: value.trim()
             });
             console.log('API Response:', response.data);

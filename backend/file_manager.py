@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import json
+from validators import sanitize_filename
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -12,10 +13,13 @@ def save_upload(file_obj, filename: str) -> str:
     """
     Save an uploaded file to the uploads directory.
     Returns the absolute path of the saved file.
+    Filenames are sanitized to prevent directory traversal attacks.
     """
+    # Sanitize filename to prevent path traversal
+    safe_base = sanitize_filename(filename)
     # Create timestamped filename to avoid collisions
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base, ext = os.path.splitext(filename)
+    base, ext = os.path.splitext(safe_base)
     safe_filename = f"{base}_{timestamp}{ext}"
     file_path = os.path.join(UPLOAD_DIR, safe_filename)
     

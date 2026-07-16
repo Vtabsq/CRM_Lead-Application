@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Plus, Trash2, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import api from '../api';
 import PatientSearch from '../components/PatientSearch';
 import ServiceSelector from '../components/ServiceSelector';
 import EditableDropdown from '../components/EditableDropdown';
-import API_BASE_URL from '../config';
 
 const InvoiceCreateNew = () => {
     const navigate = useNavigate();
@@ -123,7 +122,7 @@ const InvoiceCreateNew = () => {
                 total_amount: finalAmount
             };
 
-            const response = await axios.post(`${API_BASE_URL}/api/invoices`, invoiceData);
+            const response = await api.post('/api/invoices', invoiceData);
 
             const statusMessage = status === 'Paid' ? 'Invoice created and marked as Paid!' : 'Invoice created successfully!';
             alert(`${statusMessage} Invoice ID: ${response.data.invoice_id}`);

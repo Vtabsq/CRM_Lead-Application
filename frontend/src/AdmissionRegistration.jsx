@@ -5,9 +5,8 @@ import {
     Upload, Search, Bed, Edit3, Plus, Trash2
 } from 'lucide-react';
 
-import axios from 'axios';
+import api from './api';
 import DynamicForm from './components/DynamicForm';
-import API_BASE_URL from './config';
 import {
     indianStates,
     getDistrictsForState,
@@ -32,12 +31,12 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
 
     useEffect(() => {
         // Fetch Charge Settings
-        axios.get(`${API_BASE_URL}/api/settings/charges`)
+        api.get('/api/settings/charges')
             .then(res => setChargeSettings(res.data))
             .catch(err => console.error("Error fetching charge settings", err));
 
         // Fetch Dynamic Schema
-        axios.get(`${API_BASE_URL}/get_fields?type=admission`)
+        api.get('/get_fields?type=admission')
             .then(res => {
                 setDynamicFields(res.data.fields || []);
             })
@@ -222,7 +221,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
     const fetchAdmissions = async () => {
         setLoadingAdmissions(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/patient-admission/view`);
+            const res = await api.get('/patient-admission/view');
             if (res.data.status === 'success') {
                 setAdmissionRecords(res.data.data);
             }
@@ -245,8 +244,8 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
             try {
                 setLoading(true);
                 const [bedsRes, patientsRes] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/api/beds`),
-                    axios.get(`${API_BASE_URL}/search_data?limit=1000`)
+                    api.get('/api/beds'),
+                    api.get('/search_data?limit=1000')
                 ]);
                 setBeds(bedsRes.data.beds || []);
                 setPatients(patientsRes.data.rows || []);
@@ -461,7 +460,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
             }));
 
             // Send as { rows: [...] }
-            await axios.post(`${API_BASE_URL}/patient-admission/save`, { rows: formattedRows });
+            await api.post('/patient-admission/save', { rows: formattedRows });
 
             alert('Admissions Registered Successfully!');
             // Reset to 1 empty row
@@ -979,12 +978,12 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
 
         useEffect(() => {
             // Fetch Charge Settings
-            axios.get(`${API_BASE_URL}/api/settings/charges`)
+            api.get('/api/settings/charges')
                 .then(res => setChargeSettings(res.data))
                 .catch(err => console.error("Error fetching charge settings", err));
 
             // Fetch Dynamic Schema
-            axios.get(`${API_BASE_URL}/get_fields?type=admission`)
+            api.get('/get_fields?type=admission')
                 .then(res => {
                     setDynamicFields(res.data.fields || []);
                 })
@@ -1267,7 +1266,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
         const fetchAdmissions = async () => {
             setLoadingAdmissions(true);
             try {
-                const res = await axios.get(`${API_BASE_URL}/patient-admission/view`);
+                const res = await api.get('/patient-admission/view');
                 if (res.data.status === 'success') {
                     setAdmissionRecords(res.data.data);
                 }
@@ -1290,8 +1289,8 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                 try {
                     setLoading(true);
                     const [bedsRes, patientsRes] = await Promise.all([
-                        axios.get(`${API_BASE_URL}/api/beds`),
-                        axios.get(`${API_BASE_URL}/search_data?limit=1000`)
+                        api.get('/api/beds'),
+                        api.get('/search_data?limit=1000')
                     ]);
                     setBeds(bedsRes.data.beds || []);
                     setPatients(patientsRes.data.rows || []);
@@ -1508,7 +1507,7 @@ const AdmissionRegistration = ({ generateMemberId, onSearch, currentStep, onStep
                 }));
 
                 // Send as { rows: [...] }
-                await axios.post(`${API_BASE_URL}/patient-admission/save`, { rows: formattedRows });
+                await api.post('/patient-admission/save', { rows: formattedRows });
 
                 alert('Admissions Registered Successfully!');
                 // Reset to 1 empty row

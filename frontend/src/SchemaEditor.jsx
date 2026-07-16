@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Plus, Save, Trash2, Edit3, Upload } from 'lucide-react';
 
-import API_BASE_URL from './config';
 
 const SchemaEditor = () => {
     const [schemaType, setSchemaType] = useState('enquiry'); // 'enquiry' or 'admission'
@@ -16,7 +15,7 @@ const SchemaEditor = () => {
         try {
             setLoading(true);
             setError('');
-            const response = await axios.get(`${API_BASE_URL}/get_fields?type=${type}`);
+            const response = await api.get(`/get_fields?type=${type}`);
             setSchema(response.data.fields || []);
         } catch (err) {
             setError('Failed to load fields.');
@@ -118,7 +117,7 @@ const SchemaEditor = () => {
             // Re-assign to use unique schema for saving
             const finalPayload = uniqueSchema;
 
-            await axios.post(`${API_BASE_URL}/update_fields?type=${schemaType}`, { fields: finalPayload });
+            await api.post(`/update_fields?type=${schemaType}`, { fields: finalPayload });
             setMessage('Schema saved successfully!');
             setTimeout(() => setMessage(null), 3000);
         } catch (err) {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Save, Loader2, IndianRupee } from 'lucide-react';
-import API_BASE_URL from './config';
 
 const ChargeSummary = () => {
     const [charges, setCharges] = useState(null);
@@ -16,7 +15,7 @@ const ChargeSummary = () => {
 
     const fetchCharges = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/settings/charges`);
+            const res = await api.get('/api/settings/charges');
             setCharges(res.data);
             setLoading(false);
         } catch (err) {
@@ -31,7 +30,7 @@ const ChargeSummary = () => {
             setSaving(true);
             setError('');
             setSuccess('');
-            await axios.post(`${API_BASE_URL}/api/settings/charges`, charges);
+            await api.post('/api/settings/charges', charges);
             setSuccess("Charges updated successfully!");
         } catch (err) {
             setError("Failed to save charges.");

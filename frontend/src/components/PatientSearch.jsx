@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, CheckCircle } from 'lucide-react';
-import axios from 'axios';
-import API_BASE_URL from '../config';
+import api from '../api';
 
 const PatientSearch = ({ onSelect, selectedPatient, onClear }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -20,7 +19,7 @@ const PatientSearch = ({ onSelect, selectedPatient, onClear }) => {
 
             setLoading(true);
             try {
-                const response = await axios.get(`${API_BASE_URL}/api/patients/search`, {
+                const response = await api.get('/api/patients/search', {
                     params: { q: searchTerm }
                 });
                 setPatients(response.data.patients || []);

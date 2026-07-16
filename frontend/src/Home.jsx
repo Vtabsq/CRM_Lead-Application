@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Users, TrendingUp, UserPlus, UserMinus, Calendar, XCircle, CheckCircle, Building2, LogOut, AlertCircle, ChevronRight } from 'lucide-react';
 
 const Home = () => {
@@ -34,18 +34,18 @@ const Home = () => {
                 rsPuramAdm, ramNagarAdm, chennaiAdm,
                 rsPuramDis, ramNagarDis, chennaiDis
             ] = await Promise.all([
-                axios.get(`${API_BASE_URL}/api/dashboard/previous-day-enquiries`),
-                axios.get(`${API_BASE_URL}/api/dashboard/converted-leads-yesterday`),
-                axios.get(`${API_BASE_URL}/api/dashboard/enquiries-rejected-yesterday`),
-                axios.get(`${API_BASE_URL}/api/dashboard/complaints-received-yesterday`),
-                axios.get(`${API_BASE_URL}/api/dashboard/complaints-resolved-yesterday`),
-                axios.get(`${API_BASE_URL}/api/dashboard/follow-ups-due-today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=RS Puram&date_filter=today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=ram nagar&date_filter=today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/admissions-by-center?care_center=chennai&date_filter=today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=RS Puram&date_filter=today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=ram nagar&date_filter=today`),
-                axios.get(`${API_BASE_URL}/api/dashboard/discharges-by-center?care_center=chennai&date_filter=today`)
+                api.get('/api/dashboard/previous-day-enquiries'),
+                api.get('/api/dashboard/converted-leads-yesterday'),
+                api.get('/api/dashboard/enquiries-rejected-yesterday'),
+                api.get('/api/dashboard/complaints-received-yesterday'),
+                api.get('/api/dashboard/complaints-resolved-yesterday'),
+                api.get('/api/dashboard/follow-ups-due-today'),
+                api.get('/api/dashboard/admissions-by-center?care_center=RS Puram&date_filter=today'),
+                api.get('/api/dashboard/admissions-by-center?care_center=ram nagar&date_filter=today'),
+                api.get('/api/dashboard/admissions-by-center?care_center=chennai&date_filter=today'),
+                api.get('/api/dashboard/discharges-by-center?care_center=RS Puram&date_filter=today'),
+                api.get('/api/dashboard/discharges-by-center?care_center=ram nagar&date_filter=today'),
+                api.get('/api/dashboard/discharges-by-center?care_center=chennai&date_filter=today')
             ]);
 
             setDashboardData({

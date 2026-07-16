@@ -1,4 +1,11 @@
-from fastapi import FastAPI, HTTPException, Body, BackgroundTasks, UploadFile, File, Query
+from fastapi import FastAPI, HTTPException, Body, BackgroundTasks, UploadFile, File, Query, Request
+from security import (
+    create_access_token, verify_password, hash_password,
+    check_login_attempts, record_failed_attempt, record_successful_login,
+    AuthenticationMiddleware, SecurityHeadersMiddleware, ALLOWED_ORIGINS,
+)
+from rate_limiter import RateLimitMiddleware
+from logger import logger, log_security_event
 from fastapi.responses import StreamingResponse, FileResponse, Response
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -139,13 +146,15 @@ def save_settings(settings: Settings):
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings.dict(), f, indent=2)
 
-# CORS middleware to allow frontend requests
+app.add_middleware(AuthenticationMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
 # Include invoice router
@@ -4136,48 +4145,51 @@ login_cache: Dict[str, Any] = {"users": {}, "last_fetched": 0}
 LOGIN_CACHE_DURATION = 300  # 5 minutes
 
 @app.post("/login")
-async def login(payload: LoginRequest):
+async def login(payload: LoginRequest, request: Request):
     """Validate credentials against Google Sheet worksheet 'login details'.
     Expected columns: User_name, Password (case-insensitive).
-    Fallback: accepts admin/admin for development if Google Sheet access fails.
+    Returns a JWT token on successful authentication.
     """
     import time
     start_time = time.time()
-    print(f"[Login] Request received for user: {payload.User_name}")
+    
+    # Get client IP for logging
+    client_ip = request.headers.get("X-Forwarded-For", request.headers.get("X-Real-IP", request.client.host if request.client else "unknown"))
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
 
     in_user = str(payload.User_name or '').strip()
     in_pass = str(payload.Password or '').strip()
     
+    logger.info(f"[Login] Request received for user: {in_user}")
+
     if not in_user or not in_pass:
+        log_security_event("login_failed", user=in_user, ip=client_ip, details="Empty credentials")
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
-    # Development fallback credentials
-    DEV_CREDENTIALS = {
-        "admin": "admin",
-        "user": "user123",
-        "test": "test123"
-    }
-    
-    # Check dev credentials first for quick access
-    if in_user in DEV_CREDENTIALS and DEV_CREDENTIALS[in_user] == in_pass:
-        print(f"[Login] Dev credentials accepted. Time: {time.time() - start_time:.2f}s")
-        return {"status": "ok"}
+    # Check if user is locked out due to too many failed attempts
+    check_login_attempts(in_user)
 
     # Check cache first
     current_time = time.time()
     if login_cache["users"] and (current_time - login_cache["last_fetched"] < LOGIN_CACHE_DURATION):
         cached_pass = login_cache["users"].get(in_user)
-        if cached_pass and cached_pass == in_pass:
-            print(f"[Login] Cached credentials accepted. Time: {time.time() - start_time:.2f}s")
-            return {"status": "ok"}
+        if cached_pass and verify_password(in_pass, cached_pass):
+            record_successful_login(in_user)
+            token = create_access_token(username=in_user)
+            log_security_event("login_success", user=in_user, ip=client_ip, details="Cached credentials", level="info")
+            logger.info(f"[Login] Cached credentials accepted. Time: {time.time() - start_time:.2f}s")
+            return {"status": "ok", "token": token, "username": in_user}
     
     # Try Google Sheet authentication
     if not os.path.exists(CREDENTIALS_FILE):
-        print("[Login] Google credentials file not found, using dev fallback only")
+        logger.warning("[Login] Google credentials file not found")
+        record_failed_attempt(in_user)
+        log_security_event("login_failed", user=in_user, ip=client_ip, details="Credentials file missing")
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     try:
-        print(f"[Login] Connecting to Google Sheets... Time: {time.time() - start_time:.2f}s")
+        logger.info(f"[Login] Connecting to Google Sheets... Time: {time.time() - start_time:.2f}s")
         scope = [
             'https://spreadsheets.google.com/feeds',
             'https://www.googleapis.com/auth/drive'
@@ -4187,7 +4199,7 @@ async def login(payload: LoginRequest):
         spreadsheet = ensure_google_sheet(client)
 
         # Case-insensitive lookup for worksheet named 'Login Details'
-        print(f"[Login] Finding worksheet... Time: {time.time() - start_time:.2f}s")
+        logger.info(f"[Login] Finding worksheet... Time: {time.time() - start_time:.2f}s")
         try:
             ws = None
             # Fast check first
@@ -4201,18 +4213,20 @@ async def login(payload: LoginRequest):
                         break
             
             if ws is None:
-                print("[Login] 'Login Details' worksheet not found, using dev fallback only")
+                logger.warning("[Login] 'Login Details' worksheet not found")
+                record_failed_attempt(in_user)
                 raise HTTPException(status_code=401, detail="Invalid username or password")
         except HTTPException:
             raise
         except Exception as e:
-            print(f"[Login] Error accessing worksheets: {e}")
+            logger.error(f"[Login] Error accessing worksheets: {e}")
             raise HTTPException(status_code=401, detail="Invalid username or password")
 
-        print(f"[Login] Fetching values... Time: {time.time() - start_time:.2f}s")
+        logger.info(f"[Login] Fetching values... Time: {time.time() - start_time:.2f}s")
         values = ws.get_all_values() or []
         if len(values) < 2:
-            print("[Login] No user data in Login Details worksheet")
+            logger.warning("[Login] No user data in Login Details worksheet")
+            record_failed_attempt(in_user)
             raise HTTPException(status_code=401, detail="Invalid username or password")
 
         headers = values[0]
@@ -4227,7 +4241,8 @@ async def login(payload: LoginRequest):
         )
         pass_col = header_map.get('password')
         if user_col is None or pass_col is None:
-            print("[Login] Required columns not found in Login Details worksheet")
+            logger.warning("[Login] Required columns not found in Login Details worksheet")
+            record_failed_attempt(in_user)
             raise HTTPException(status_code=401, detail="Invalid username or password")
 
         # Refresh cache
@@ -4238,7 +4253,7 @@ async def login(payload: LoginRequest):
             p = str(r[pass_col]).strip() if pass_col < len(r) else ''
             if u:
                 new_cache[u] = p
-            if u == in_user and p == in_pass:
+            if u == in_user and verify_password(in_pass, p):
                 found = True
 
         # Update global cache
@@ -4246,17 +4261,21 @@ async def login(payload: LoginRequest):
         login_cache["last_fetched"] = current_time
         
         if found:
-            print(f"[Login] Google Sheet credentials accepted and cached. Time: {time.time() - start_time:.2f}s")
-            return {"status": "ok"}
+            record_successful_login(in_user)
+            token = create_access_token(username=in_user)
+            log_security_event("login_success", user=in_user, ip=client_ip, level="info")
+            logger.info(f"[Login] Google Sheet credentials accepted. Time: {time.time() - start_time:.2f}s")
+            return {"status": "ok", "token": token, "username": in_user}
 
-        print(f"[Login] Credential mismatch for user '{in_user}'. Time: {time.time() - start_time:.2f}s")
+        record_failed_attempt(in_user)
+        log_security_event("login_failed", user=in_user, ip=client_ip, details="Credential mismatch")
+        logger.info(f"[Login] Credential mismatch for user. Time: {time.time() - start_time:.2f}s")
         raise HTTPException(status_code=401, detail="Invalid username or password")
     except HTTPException:
         raise
     except Exception as exc:
-        print(f"[Login] Exception during Google Sheet auth: {exc}")
-        # If google auth fails, fallback to checking cache one last time if we have old data? 
-        # No, simpler to just fail safe.
+        logger.error(f"[Login] Exception during Google Sheet auth: {exc}")
+        record_failed_attempt(in_user)
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
 

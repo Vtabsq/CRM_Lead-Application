@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Search, RefreshCw, Table, ChevronLeft, ChevronRight, Edit2, X, Save } from 'lucide-react';
 
-import API_BASE_URL from './config';
 const COLUMNS_PER_PAGE = 5;
 
 const SearchData = () => {
@@ -25,7 +24,7 @@ const SearchData = () => {
     const performSearch = async () => {
         try {
             setError('');
-            const res = await axios.post(`${API_BASE_URL}/search`, {
+            const res = await api.post('/search', {
                 date: searchCriteria.date,
                 name: searchCriteria.name,
                 memberId: searchCriteria.member_id
@@ -49,7 +48,7 @@ const SearchData = () => {
     const loadAllRecords = async () => {
         try {
             setError('');
-            const res = await axios.post(`${API_BASE_URL}/search`, {
+            const res = await api.post('/search', {
                 date: "",
                 name: "",
                 memberId: ""
@@ -105,7 +104,7 @@ const SearchData = () => {
                 return;
             }
 
-            await axios.put(`${API_BASE_URL}/update_record`, {
+            await api.put('/update_record', {
                 member_id: editFormData[memberIdKey],
                 data: editFormData
             });

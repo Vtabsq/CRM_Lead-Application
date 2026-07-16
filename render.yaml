@@ -10,6 +10,12 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10
+      - key: ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
       - key: EXCEL_FILE_PATH
         sync: false
       - key: GOOGLE_SHEET_NAME

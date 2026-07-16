@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { LayoutGrid, Users, Calendar, CheckCircle, XCircle, AlertCircle, Bed, User, Plus, Sparkles } from 'lucide-react';
 
-import API_BASE_URL from './config';
 
 const BedManagement = () => {
     const [beds, setBeds] = useState([]);
@@ -50,7 +49,7 @@ const BedManagement = () => {
     const submitComplaint = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_BASE_URL}/api/complaints`, {
+            await api.post('/api/complaints', {
                 room_no: selectedBed.room_no,
                 patient_name: selectedBed.patient_name, // Assuming bed object has this
                 ...complaintData
@@ -65,7 +64,7 @@ const BedManagement = () => {
     const submitFeedback = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_BASE_URL}/api/feedback`, feedbackData);
+            await api.post('/api/feedback', feedbackData);
             setShowFeedbackModal(false);
             alert("Feedback submitted.");
         } catch (error) {
@@ -92,7 +91,7 @@ const BedManagement = () => {
     const fetchBeds = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE_URL}/api/beds`);
+            const response = await api.get('/api/beds');
             setBeds(response.data.beds || []);
         } catch (error) {
             console.error("Error fetching beds:", error);
@@ -103,7 +102,7 @@ const BedManagement = () => {
 
     const fetchPatients = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/search_data?limit=1000`);
+            const response = await api.get('/search_data?limit=1000');
             console.log("BedManagement: Received patients", response.data);
             setPatients(response.data.rows || []);
             setPatientHeaders(response.data.headers || []);
@@ -303,7 +302,7 @@ const BedManagement = () => {
         setShowAllocationModal(false);
 
         try {
-            await axios.post(`${API_BASE_URL}/api/beds/allocate`, {
+            await api.post('/api/beds/allocate', {
                 ...formData,
                 room_no: selectedBed.room_no,
                 bed_index: selectedBed.bed_index,
@@ -336,7 +335,7 @@ const BedManagement = () => {
         setSelectedPatient(null);
 
         try {
-            await axios.post(`${API_BASE_URL}/api/beds/update-discharge`, null, {
+            await api.post('/api/beds/update-discharge', null, {
                 params: {
                     room_no: selectedPatient.room_no,
                     bed_index: selectedPatient.bed_index,
@@ -375,7 +374,7 @@ const BedManagement = () => {
         setSelectedPatient(null);
 
         try {
-            await axios.post(`${API_BASE_URL}/api/beds/discharge`, null, {
+            await api.post('/api/beds/discharge', null, {
                 params: {
                     room_no: selectedPatient.room_no,
                     bed_index: selectedPatient.bed_index
